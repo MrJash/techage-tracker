@@ -1,0 +1,5 @@
+{
+  "name": "TechAge Tracker",
+  "description": "A minimalistic application to track your electronic products and calculate their age.",
+  "requestFramePermissions": []
+}

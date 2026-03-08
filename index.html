@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechAge Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+
+    (function () {
+      try {
+        const theme = localStorage.getItem('tech_tracker_theme');
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (theme === 'dark' || (!theme && supportDarkMode)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) { }
+    })();
+  </script>
+
+  <style>
+    :root {
+      background-color: #f8fafc;
+    }
+
+    .dark {
+      background-color: #000000;
+      color: #f4f4f5;
+    }
+
+    /* Prevent white border pop in dark mode.
+       Must be inside @layer so Tailwind @layer utilities can override it. */
+    @layer base {
+      :where(.dark *) {
+        border-color: #27272a;
+        /* Zinc 800 */
+      }
+    }
+
+
+
+
+
+    body {
+      margin: 0;
+      background-color: inherit;
+    }
+
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes zoom-in {
+      from {
+        transform: translate(-50%, -48%) scale(0.95);
+        opacity: 0;
+      }
+
+      to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes zoom-out {
+      from {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+
+      to {
+        transform: translate(-50%, -48%) scale(0.95);
+        opacity: 0;
+      }
+    }
+
+    .animate-in {
+      animation-duration: 150ms;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      animation-fill-mode: forwards;
+    }
+
+    .data-\[state\=open\]\:animate-in[data-state="open"] {
+      animation-name: fade-in;
+    }
+
+    .dialog-content-in[data-state="open"] {
+      animation-name: zoom-in;
+    }
+
+    .data-\[state\=closed\]\:animate-out[data-state="closed"] {
+      animation-name: fade-out;
+    }
+
+    .dialog-content-out[data-state="closed"] {
+      animation-name: zoom-out;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react/": "https://esm.sh/react@^19.2.4/",
+      "react": "https://esm.sh/react@^19.2.4",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+      "lucide-react": "https://esm.sh/lucide-react@^0.564.0"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
