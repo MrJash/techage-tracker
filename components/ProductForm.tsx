@@ -1,7 +1,8 @@
 import React from 'react';
 import { Select } from './Select';
-import { Eye, Download, X, Upload } from 'lucide-react';
+import { Eye, Download, X, Upload, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { Button } from './ui/button';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 
 interface ProductFormProps {
   formData: any;
@@ -10,6 +11,7 @@ interface ProductFormProps {
   categoryOptions: { label: string; value: string }[];
   monthOptions: { label: string; value: number }[];
   yearOptions: { label: string; value: number }[];
+  conditionOptions?: { label: string; value: string; icon?: any }[];
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -18,7 +20,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   handleFileChange,
   categoryOptions,
   monthOptions,
-  yearOptions
+  yearOptions,
+  conditionOptions
 }) => {
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
 
@@ -35,11 +38,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           placeholder="e.g. MacBook Pro M3"
           value={formData.name}
           onChange={e => setFormData({...formData, name: e.target.value})}
-          className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+          className="flex min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm leading-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-[3fr_2fr] sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
             Category
@@ -63,7 +66,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               placeholder="0.00"
               value={formData.price}
               onChange={e => setFormData({...formData, price: e.target.value})}
-              className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-7 pr-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+              className="flex min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-7 pr-3 py-2 text-sm leading-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
             />
           </div>
         </div>
@@ -73,7 +76,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
           Purchase Date
         </label>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <Select 
             value={formData.purchaseMonth}
             onChange={(val) => setFormData({...formData, purchaseMonth: Number(val)})}
@@ -91,7 +94,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-[2fr_3fr] sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <div className="flex items-center h-7 mb-1.5">
             <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300">
@@ -106,7 +109,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               placeholder="e.g. 1 or 0.5"
               value={formData.warrantyYears}
               onChange={e => setFormData({...formData, warrantyYears: e.target.value})}
-              className="flex h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-14 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
+              className="flex min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-3 pr-14 py-2 text-sm leading-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-zinc-500 font-medium pointer-events-none">
               Year
@@ -115,7 +118,57 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
 
         <div>
-          <div className="flex items-center justify-between h-7 mb-1.5">
+          <div className="flex items-center h-7 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300">
+              Choose Condition
+            </label>
+          </div>
+          <ToggleGroup
+            type="single"
+            value={formData.condition === 'Mint' ? 'Fine' : formData.condition}
+            onValueChange={(val) => {
+              if (val) setFormData({...formData, condition: val});
+            }}
+            className="flex items-stretch h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 gap-1"
+          >
+            <ToggleGroupItem
+              value="Fine"
+              aria-label="Fine"
+              className={`flex-1 h-full rounded-md text-slate-400 hover:text-emerald-600 dark:text-zinc-500 hover:bg-slate-50 dark:hover:bg-zinc-800 dark:hover:text-emerald-400 data-[state=on]:bg-emerald-100 data-[state=on]:text-emerald-700 dark:data-[state=on]:bg-emerald-900/40 dark:data-[state=on]:text-emerald-400 transition-all duration-200 ${(formData.condition === 'Fine' || formData.condition === 'Mint') ? 'shadow-sm' : ''}`}
+              title="Fine"
+            >
+              <Sparkles size={18} />
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="Good"
+              aria-label="Good"
+              className={`flex-1 h-full rounded-md text-slate-400 hover:text-blue-600 dark:text-zinc-500 hover:bg-slate-50 dark:hover:bg-zinc-800 dark:hover:text-blue-400 data-[state=on]:bg-blue-100 data-[state=on]:text-blue-700 dark:data-[state=on]:bg-blue-900/40 dark:data-[state=on]:text-blue-400 transition-all duration-200 ${formData.condition === 'Good' ? 'shadow-sm' : ''}`}
+              title="Good"
+            >
+              <ThumbsUp size={18} />
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="Poor"
+              aria-label="Poor"
+              className={`flex-1 h-full rounded-md text-slate-400 hover:text-amber-600 dark:text-zinc-500 hover:bg-slate-50 dark:hover:bg-zinc-800 dark:hover:text-amber-400 data-[state=on]:bg-amber-100 data-[state=on]:text-amber-700 dark:data-[state=on]:bg-amber-900/40 dark:data-[state=on]:text-amber-400 transition-all duration-200 ${formData.condition === 'Poor' ? 'shadow-sm' : ''}`}
+              title="Poor"
+            >
+              <AlertTriangle size={18} />
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="Critical"
+              aria-label="Critical"
+              className={`flex-1 h-full rounded-md text-slate-400 hover:text-red-600 dark:text-zinc-500 hover:bg-slate-50 dark:hover:bg-zinc-800 dark:hover:text-red-400 data-[state=on]:bg-red-100 data-[state=on]:text-red-700 dark:data-[state=on]:bg-red-900/40 dark:data-[state=on]:text-red-400 transition-all duration-200 ${formData.condition === 'Critical' ? 'shadow-sm' : ''}`}
+              title="Critical"
+            >
+              <AlertOctagon size={18} />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between h-7 mb-1.5">
             <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300">
               Receipt (PDF)
             </label>
@@ -189,8 +242,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </Button>
           </div>
         </div>
-
-      </div>
     </>
   );
 };

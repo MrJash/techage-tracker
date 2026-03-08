@@ -7,6 +7,7 @@ export interface Product {
   price?: number;
   warrantyYears?: number;
   receipt?: string;
+  condition?: string;
   createdAt: number;
 }
 
@@ -28,4 +29,8 @@ export const CATEGORIES = [
   "Smartphone", "Laptop", "Desktop", "Tablet", "Smartwatch", "Headphones",
   "Earbuds", "Camera", "Console", "TV", "Monitor", "Peripherals",
   "Smart Home", "Other"
+];
+
+export const CONDITIONS = [
+  "Mint", "Fine", "Good", "Poor", "Critical"
 ];

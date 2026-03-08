@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Product } from '../types';
 import { calculateAge, getMonthName, calculateWarrantyStatus, getWarrantyExpirationDate } from '../utils/dateHelpers';
-import { Calendar, Trash2, Pencil, IndianRupee, ShieldCheck, ShieldAlert, ShieldX, FileText, Eye, Download, X, GripHorizontal, FolderInput, Check } from 'lucide-react';
+import { Calendar, Trash2, Pencil, IndianRupee, ShieldCheck, ShieldAlert, ShieldX, FileText, Eye, Download, X, GripHorizontal, FolderInput, Check, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
 import Hamburger from 'hamburger-react';
 import { getCollectionIcon } from './Sidebar';
 import {
@@ -41,6 +41,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onDragStart, onDragOver, onDragEnter, onDrop, onDragEnd, isDraggedOver, 
   isSelectMode, isSelected, onToggleSelect, onLongPress 
 }) => {
+  const getConditionIcon = (condition: string) => {
+    switch (condition) {
+      case 'Mint':
+      case 'Fine':
+        return <Sparkles size={12} className="mr-1.5 flex-shrink-0" />;
+      case 'Good':
+        return <ThumbsUp size={12} className="mr-1.5 flex-shrink-0" />;
+      case 'Poor':
+        return <AlertTriangle size={12} className="mr-1.5 flex-shrink-0" />;
+      case 'Critical':
+        return <AlertOctagon size={12} className="mr-1.5 flex-shrink-0" />;
+      default:
+        return null;
+    }
+  };
+
   const age = calculateAge(product.purchaseMonth, product.purchaseYear);
   const purchaseDate = `${getMonthName(product.purchaseMonth)} ${product.purchaseYear}`;
   const warrantyStatus = calculateWarrantyStatus(product.purchaseMonth, product.purchaseYear, product.warrantyYears);
@@ -220,9 +236,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 
       <div>
-        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 mb-3">
-          {React.createElement(getCollectionIcon(product.category), { size: 12, className: 'mr-1.5 flex-shrink-0' })}
-          {product.category}
+        <div className="flex gap-2 mb-3">
+          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
+            {React.createElement(getCollectionIcon(product.category), { size: 12, className: 'mr-1.5 flex-shrink-0' })}
+            {product.category}
+          </div>
+          
+          {product.condition && (
+            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+              product.condition === 'Mint' || product.condition === 'Fine' 
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400'
+                : product.condition === 'Good'
+                ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400'
+                : product.condition === 'Poor'
+                ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400'
+                : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400'
+            }`}>
+              {getConditionIcon(product.condition)}
+              {product.condition}
+            </div>
+          )}
         </div>
         
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 leading-tight">

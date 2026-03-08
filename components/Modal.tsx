@@ -26,8 +26,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
     >
 
       <div 
-        className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200 flex flex-col my-8 border border-transparent dark:border-zinc-800 origin-center scale-120"
-
+        className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200 flex flex-col my-8 border border-transparent dark:border-zinc-800"
         onClick={(e) => e.stopPropagation()}
       >
 

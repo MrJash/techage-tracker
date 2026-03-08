@@ -13,6 +13,7 @@ import { Button } from './ui/button';
 interface SelectOption {
   value: string | number;
   label: string;
+  icon?: LucideIcon;
 }
 
 interface SelectProps {
@@ -63,6 +64,7 @@ export const Select: React.FC<SelectProps> = ({
           <Button variant="outline" className={`flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-normal ring-offset-white dark:ring-offset-black transition-all duration-200 hover:bg-slate-50 dark:hover:bg-zinc-800 ${className}`}>
             <div className="flex items-center min-w-0 flex-1">
               {Icon && <Icon size={16} className={`mr-2 shrink-0 ${!selectedOption ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`} />}
+              {!Icon && selectedOption?.icon && <selectedOption.icon size={16} className="mr-2 shrink-0 text-slate-900 dark:text-white" />}
               <span className={`block truncate ${!selectedOption ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`}>
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
@@ -76,20 +78,28 @@ export const Select: React.FC<SelectProps> = ({
           {placeholder}
         </DropdownMenuLabel>
         <DropdownMenuGroup>
-          {options.map((option) => (
-            <DropdownMenuItem
-              key={option.value}
-              onClick={() => onChange(option.value)}
-              className="cursor-pointer text-sm font-medium flex items-center justify-between group py-2 px-3"
-            >
-              <span className={`truncate ${option.value === value ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-zinc-400'}`}>
-                {option.label}
-              </span>
-              {option.value === value && (
-                <Check size={14} className="text-slate-900 dark:text-white shrink-0 ml-2" />
-              )}
-            </DropdownMenuItem>
-          ))}
+          {options.map((option) => {
+            const OptionIcon = option.icon;
+            return (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => onChange(option.value)}
+                className="cursor-pointer text-sm font-medium flex items-center justify-between group py-2 px-3"
+              >
+                <div className="flex items-center min-w-0">
+                  {OptionIcon && (
+                    <OptionIcon size={14} className={`mr-2 shrink-0 ${option.value === value ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-zinc-400'}`} />
+                  )}
+                  <span className={`truncate ${option.value === value ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-zinc-400'}`}>
+                    {option.label}
+                  </span>
+                </div>
+                {option.value === value && (
+                  <Check size={14} className="text-slate-900 dark:text-white shrink-0 ml-2" />
+                )}
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

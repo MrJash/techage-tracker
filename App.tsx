@@ -9,7 +9,7 @@ import { SortDropdown } from './components/SortDropdown';
 import { MultiSelect } from './components/MultiSelect';
 import { ProductForm } from './components/ProductForm';
 import { AnimatedThemeToggler } from './components/ui/animated-theme-toggler';
-import { Collection, Product, MONTHS, CATEGORIES } from './types';
+import { Collection, Product, MONTHS, CATEGORIES, CONDITIONS } from './types';
 import { generateId, calculateWarrantyStatus } from './utils/dateHelpers';
 import { Toast } from './components/Toast';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
@@ -36,7 +36,7 @@ import {
   DropdownMenuLabel,
 } from './components/ui/dropdown-menu';
 
-import { Plus, Menu, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, IndianRupee } from 'lucide-react';
+import { Plus, Menu, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, IndianRupee, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
 
 
 
@@ -60,7 +60,8 @@ const EMPTY_FORM = {
   purchaseYear: new Date().getFullYear(),
   price: '',
   warrantyYears: '',
-  receipt: ''
+  receipt: '',
+  condition: ''
 };
 
 export default function App() {
@@ -254,16 +255,13 @@ export default function App() {
       });
   }, [user]);
 
-  // Save to Firestore when collections change (debounced 1.5s)
+  // Save to Firestore when collections change
   useEffect(() => {
     if (!cloudSyncReady || !user) return;
-    const timeout = setTimeout(() => {
-      setIsSyncing(true);
-      saveCollectionsToFirestore(user.uid, collections)
-        .catch(console.error)
-        .finally(() => setIsSyncing(false));
-    }, 1500);
-    return () => clearTimeout(timeout);
+    setIsSyncing(true);
+    saveCollectionsToFirestore(user.uid, collections)
+      .catch(console.error)
+      .finally(() => setIsSyncing(false));
   }, [collections, cloudSyncReady, user]);
 
   const toggleTheme = () => {
@@ -360,6 +358,14 @@ export default function App() {
 
   const categoryOptions = CATEGORIES.map(c => ({ label: c, value: c }));
   
+  const conditionOptions = [
+    { label: 'Mint', value: 'Mint', icon: Sparkles },
+    { label: 'Fine', value: 'Fine', icon: Sparkles },
+    { label: 'Good', value: 'Good', icon: ThumbsUp },
+    { label: 'Poor', value: 'Poor', icon: AlertTriangle },
+    { label: 'Critical', value: 'Critical', icon: AlertOctagon },
+  ];
+
   const sortOptions = [
     { label: 'Custom Order', value: 'custom', disabled: !activeCollection?.hasCustomOrder },
     { label: 'Newest First', value: 'newest' },
@@ -438,6 +444,7 @@ export default function App() {
       price: formData.price ? Number(formData.price) : undefined,
       warrantyYears: formData.warrantyYears !== '' ? Number(formData.warrantyYears) : undefined,
       receipt: formData.receipt || undefined,
+      condition: formData.condition || undefined,
       createdAt: Date.now()
     };
 
@@ -463,6 +470,7 @@ export default function App() {
       price: product.price?.toString() || '',
       warrantyYears: product.warrantyYears?.toString() || '',
       receipt: product.receipt || '',
+      condition: product.condition || '',
     });
   };
 
@@ -485,6 +493,7 @@ export default function App() {
                   price: formData.price ? Number(formData.price) : undefined,
                   warrantyYears: formData.warrantyYears !== '' ? Number(formData.warrantyYears) : undefined,
                   receipt: formData.receipt || undefined,
+                  condition: formData.condition || undefined,
                 }
               : p
           )
@@ -801,8 +810,9 @@ export default function App() {
             categoryOptions={categoryOptions}
             monthOptions={monthOptions}
             yearOptions={yearOptions}
+            conditionOptions={conditionOptions}
           />
-          <div className="pt-4">
+          <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
             <Button type="submit" className="w-full">
               <Plus size={18} />
               Add Product
@@ -826,8 +836,9 @@ export default function App() {
             categoryOptions={categoryOptions}
             monthOptions={monthOptions}
             yearOptions={yearOptions}
+            conditionOptions={conditionOptions}
           />
-          <div className="pt-4">
+          <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
             <Button type="submit" className="w-full">
               <Save size={18} />
               Save Changes

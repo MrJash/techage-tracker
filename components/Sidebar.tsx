@@ -336,7 +336,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         )}
       </div>
 
-      <div className={`border-t border-slate-100 dark:border-zinc-800 transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0 p-0' : 'max-h-40 opacity-100 px-4 py-3'}`}>
+      <div className={`border-t border-slate-100 dark:border-zinc-800 transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0 p-0' : 'max-h-48 opacity-100 px-4 pt-3 pb-3'}`}>
+        <div className="text-xs font-semibold text-slate-400 dark:text-zinc-600 uppercase tracking-wider mb-2.5">Cloud Save</div>
         {user ? (
           <div className="flex items-center gap-2.5">
             {user.photoURL ? (
@@ -380,7 +381,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         )}
       </div>
 
-      <div className={`p-4 border-t border-slate-100 dark:border-zinc-800 flex overflow-hidden ${isCollapsed ? 'flex-col gap-2' : 'gap-2'}`}>
+      <div className={`border-t border-slate-100 dark:border-zinc-800 transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0 p-0' : 'max-h-24 opacity-100 px-4 pt-3 pb-4'}`}>
+        <div className="text-xs font-semibold text-slate-400 dark:text-zinc-600 uppercase tracking-wider mb-2.5">Local Save</div>
+        <div className={`flex overflow-hidden ${isCollapsed ? 'flex-col gap-2' : 'gap-2'}`}>
             <button 
                 type="button"
                 onClick={handleImportClick}
@@ -408,6 +411,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                 <Download size={14} className={`shrink-0 transition-all duration-300 ${isCollapsed ? '' : 'mr-2'}`} />
                 <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[60px] opacity-100'}`}>Export</span>
             </button>
+        </div>
       </div>
       
       <AlertDialog open={!!collectionToDelete} onOpenChange={(open) => !open && setCollectionToDelete(null)}>

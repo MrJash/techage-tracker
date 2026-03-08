@@ -188,8 +188,13 @@ body {
     animation-name: exit !important;
 }
 
-::view-transition-old(root),
+::view-transition-old(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
 ::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
+    will-change: clip-path;
 }
