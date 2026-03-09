@@ -94,6 +94,7 @@ interface SidebarProps {
   onSignIn: () => void;
   onSignOut: () => void;
   isSyncing: boolean;
+  authError?: string | null;
 }
 
 interface SidebarContentProps {
@@ -112,6 +113,7 @@ interface SidebarContentProps {
   onSignIn: () => void;
   onSignOut: () => void;
   isSyncing: boolean;
+  authError?: string | null;
 }
 
 const SidebarContent: React.FC<SidebarContentProps> = ({ 
@@ -130,6 +132,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   onSignIn,
   onSignOut,
   isSyncing,
+  authError,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
@@ -369,15 +372,20 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             </Button>
           </div>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSignIn}
-            className="w-full h-8 text-xs gap-2"
-          >
-            <GoogleIcon />
-            Sign in with Google
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSignIn}
+              className="w-full h-8 text-xs gap-2"
+            >
+              <GoogleIcon />
+              Sign in with Google
+            </Button>
+            {authError && (
+              <p className="text-xs text-red-500 mt-1 text-center">{authError}</p>
+            )}
+          </>
         )}
       </div>
 
@@ -462,6 +470,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSignIn,
   onSignOut,
   isSyncing,
+  authError,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -490,6 +499,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onSignIn={onSignIn}
             onSignOut={onSignOut}
             isSyncing={isSyncing}
+            authError={authError}
         />
       </div>
 
@@ -509,6 +519,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onSignIn={onSignIn}
             onSignOut={onSignOut}
             isSyncing={isSyncing}
+            authError={authError}
         />
       </div>
     </>
