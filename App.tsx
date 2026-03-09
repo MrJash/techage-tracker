@@ -66,7 +66,7 @@ const EMPTY_FORM = {
 
 export default function App() {
   // -- Auth --
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, authError, signIn, signOut } = useAuth();
 
   // -- State --
   
@@ -627,6 +627,7 @@ export default function App() {
         onSignIn={signIn}
         onSignOut={signOut}
         isSyncing={isSyncing}
+        authError={authError}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
