@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { User, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-
-function isMobileDevice(): boolean {
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -12,12 +8,6 @@ export function useAuth() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Handle redirect result when returning from mobile sign-in
-    getRedirectResult(auth).catch((err) => {
-      console.error(err);
-      setAuthError('Sign-in failed. Please try again.');
-    });
-
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -29,12 +19,11 @@ export function useAuth() {
     setAuthError(null);
     const provider = new GoogleAuthProvider();
     try {
-      if (isMobileDevice()) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
-    } catch (err) {
+      // signInWithPopup works on both desktop and mobile (opens a new tab on mobile).
+      // signInWithRedirect is avoided because mobile Safari's ITP blocks the
+      // cross-origin cookies Firebase needs, causing the redirect flow to silently fail.
+      await signInWithPopup(auth, provider);
+    } catch (err: any) {
       console.error(err);
       setAuthError('Sign-in failed. Please try again.');
     }
