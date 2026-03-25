@@ -15,6 +15,18 @@ export async function loadCollectionsFromFirestore(userId: string): Promise<Coll
 }
 
 export async function saveCollectionsToFirestore(userId: string, collections: Collection[]): Promise<void> {
+  // Strip base64 receipt data before saving to Firestore to stay under 1MB doc limit.
+  // Receipts are preserved in localStorage.
+  const cleanCollections = collections.map(col => ({
+    ...col,
+    products: col.products.map(p => {
+      if (p.receipt && p.receipt.startsWith('data:')) {
+        const { receipt, ...rest } = p;
+        return rest;
+      }
+      return p;
+    }),
+  }));
   const docRef = doc(db, 'users', userId);
-  await setDoc(docRef, { collections }, { merge: true });
+  await setDoc(docRef, { collections: cleanCollections }, { merge: true });
 }
