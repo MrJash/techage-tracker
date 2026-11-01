@@ -31,7 +31,12 @@
 
 ## 3. Core Modules & Architecture
 
-### A. Settings Modal (`components/SettingsModal.tsx`)
+### A. Settings Modal Architecture (`components/SettingsModal.tsx` & `components/settings/`)
+- **Orchestrator Container:** `components/SettingsModal.tsx` acts as the clean modal shell managing tabs, the reset confirmation alert dialog, and keyboard navigation.
+- **Modular Sub-components:**
+  - `components/settings/PreferencesTab.tsx`: Currency dropdown, age display format selector, warranty presets, default opening collection, and receipt limits.
+  - `components/settings/GeneralTab.tsx`: Theme mode switcher, grouped Inventory & Storage cards with quota progress meter and data exports, and Google Account & Cloud Services with sync and danger zone.
+  - `components/settings/AboutTab.tsx`: App branding, author attribution (*"Crafted with ❤️ by Jash Mewada"*), technical specifications, and release changelog.
 - **Dimensions:** Enlarged desktop window (`max-w-4xl`, `h-[760px]`, `max-h-[92vh]`) providing ample breathing room with minimal scrolling.
 - **Tab 1: Preferences**
   - **Default Currency:** Selectable across 9 supported currencies: `USD` ($), `EUR` (€), `GBP` (£), `JPY` (¥), `CAD` ($), `AUD` ($), `INR` (₹), `CHF` (Fr), and `CNY` (¥). Managed via `utils/currency.ts`.
