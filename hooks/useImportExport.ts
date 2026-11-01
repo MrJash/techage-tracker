@@ -6,7 +6,8 @@ export function useImportExport(
     setCollections: React.Dispatch<React.SetStateAction<Collection[]>>,
     setFilterCategories: React.Dispatch<React.SetStateAction<string[]>>,
     setActiveCollectionId: React.Dispatch<React.SetStateAction<string>>,
-    setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
+    setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>,
+    onProcessImport?: (importedCollections: Collection[]) => void
 ) {
     const handleExportData = () => {
         const dataStr = JSON.stringify(collections, null, 2);
@@ -37,17 +38,17 @@ export function useImportExport(
                 }
 
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    if (window.confirm("Overwrite current data with this backup?")) {
-                        setFilterCategories([]);
-
-                        setCollections(parsed);
-
-                        if (parsed[0].id) {
-                            setActiveCollectionId(parsed[0].id);
+                    if (onProcessImport) {
+                        onProcessImport(parsed);
+                    } else {
+                        if (window.confirm("Overwrite current data with this backup?")) {
+                            setFilterCategories([]);
+                            setCollections(parsed);
+                            if (parsed[0].id) {
+                                setActiveCollectionId(parsed[0].id);
+                            }
+                            setIsMobileMenuOpen(false);
                         }
-
-
-                        setIsMobileMenuOpen(false);
                     }
                 } else {
                     alert('Invalid backup file structure.');

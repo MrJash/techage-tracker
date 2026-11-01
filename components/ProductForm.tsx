@@ -25,6 +25,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
 
+  const receiptSizeKb = React.useMemo(() => {
+    if (!formData.receipt || typeof formData.receipt !== 'string') return null;
+    if (formData.receipt.startsWith('data:')) {
+      const base64Data = formData.receipt.split(',')[1] || '';
+      return Math.round((base64Data.length * 3) / 4 / 1024);
+    }
+    return null;
+  }, [formData.receipt]);
+
   return (
     <>
       <div>
@@ -240,6 +249,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 {formData.receipt ? 'PDF Uploaded' : 'Upload PDF'}
               </label>
             </Button>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-zinc-500 mt-1.5 px-0.5">
+            <span>PDF format only • Max limit 750 KB</span>
+            {receiptSizeKb !== null && (
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                Attached (~{receiptSizeKb} KB)
+              </span>
+            )}
           </div>
         </div>
     </>

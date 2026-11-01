@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Default deny for all unspecified paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User document path: users/{userId}
+    match /users/{userId} {
+      // Must be the owner of the document
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserDoc();
+
+      function isValidUserDoc() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['collections', 'lastSyncedAt'])
+          && data.collections is list
+          && data.collections.size() <= 100
+          && (!('lastSyncedAt' in data) || data.lastSyncedAt is number);
+      }
+
+      // Subcollection for Option 1: users/{userId}/receipts/{productId}
+      match /receipts/{productId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidReceiptDoc(productId);
+
+        function isValidReceiptDoc(prodId) {
+          let data = request.resource.data;
+          return data.keys().hasAll(['productId', 'receipt', 'updatedAt'])
+            && data.keys().hasOnly(['productId', 'receipt', 'updatedAt'])
+            && data.productId is string
+            && data.productId == prodId
+            && data.updatedAt is number
+            && data.receipt is string
+            // Enforce max size limit: 750 KB file encoded in base64 is ~1,000,000 characters.
+            // Safe ceiling: 1,040,000 characters (stays safely below Firestore 1 MiB hard doc limit)
+            && data.receipt.size() <= 1040000
+            && data.receipt.size() > 0
+            && data.receipt.matches('^data:application/pdf;base64,.*$');
+        }
+      }
+    }
+  }
+}

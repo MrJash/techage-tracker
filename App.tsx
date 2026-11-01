@@ -14,8 +14,10 @@ import { generateId, calculateWarrantyStatus } from './utils/dateHelpers';
 import { Toast } from './components/Toast';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useImportExport } from './hooks/useImportExport';
+import { ImportDiffModal } from './components/ImportDiffModal';
+import { compareCollections, ImportDiffResult } from './utils/diffHelpers';
 import { useAuth } from './hooks/useAuth';
-import { loadCollectionsFromFirestore, saveCollectionsToFirestore } from './lib/firestoreService';
+import { loadCollectionsFromFirestore, saveCollectionsToFirestore, deleteReceiptFromFirestore, clearReceiptSyncCache } from './lib/firestoreService';
 
 import { 
   AlertDialog, 
@@ -36,7 +38,7 @@ import {
   DropdownMenuLabel,
 } from './components/ui/dropdown-menu';
 
-import { Plus, Menu, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, IndianRupee, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { Plus, Menu, CloudUpload, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, IndianRupee, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
 
 
 
@@ -106,6 +108,12 @@ export default function App() {
   // Cloud sync state
   const [cloudSyncReady, setCloudSyncReady] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [hasLocalImportPendingSync, setHasLocalImportPendingSync] = useState<boolean>(() => {
+    return localStorage.getItem('tech_tracker_pending_sync') === 'true';
+  });
+  const [importDiffData, setImportDiffData] = useState<{ diff: ImportDiffResult; importedCollections: Collection[] } | null>(null);
+  const [isProcessingImport, setIsProcessingImport] = useState(false);
   // Keep a ref to current collections to avoid stale closures in effects
   const collectionsRef = useRef(collections);
   useEffect(() => { collectionsRef.current = collections; }, [collections]);
@@ -134,7 +142,8 @@ export default function App() {
     setCollections, 
     setFilterCategories, 
     setActiveCollectionId, 
-    setIsMobileMenuOpen
+    setIsMobileMenuOpen,
+    (importedData) => handleProcessImport(importedData)
   );
   
   // -- Form State --
@@ -177,6 +186,11 @@ export default function App() {
 
   const handleBatchDelete = () => {
     if (!window.confirm(`Delete ${selectedProductIds.length} items?`)) return;
+    if (user) {
+      selectedProductIds.forEach(id => {
+        deleteReceiptFromFirestore(user.uid, id).catch(() => {});
+      });
+    }
     setCollections(prev => prev.map(col => ({
       ...col,
       products: col.products.filter(p => !selectedProductIds.includes(p.id))
@@ -234,21 +248,44 @@ export default function App() {
   useEffect(() => {
     if (!user) {
       setCloudSyncReady(false);
+      clearReceiptSyncCache();
       return;
     }
     setIsSyncing(true);
+    setSyncError(null);
     loadCollectionsFromFirestore(user.uid)
       .then(cloudData => {
         if (cloudData) {
-          // Cloud has data — use it as source of truth
-          setCollections(cloudData);
-          setActiveCollectionId(cloudData[0].id);
+          // If user chose to keep imported data local, don't overwrite it with cloud data on load
+          if (hasLocalImportPendingSync) {
+            return;
+          }
+          // Merge with local receipts so local PDFs are preserved
+          const merged = cloudData.map(col => ({
+            ...col,
+            products: col.products.map(p => {
+              const localCol = collectionsRef.current.find(c => c.id === col.id);
+              const localProd = localCol?.products.find(lp => lp.id === p.id);
+              if (!p.receipt && localProd?.receipt) {
+                return { ...p, receipt: localProd.receipt };
+              }
+              return p;
+            })
+          }));
+          setCollections(merged);
+          setActiveCollectionId(merged[0].id);
         } else {
           // No cloud data yet — upload current local data
-          saveCollectionsToFirestore(user.uid, collectionsRef.current).catch(console.error);
+          saveCollectionsToFirestore(user.uid, collectionsRef.current).catch(err => {
+            console.error(err);
+            setSyncError(err?.message || 'Initial sync failed');
+          });
         }
       })
-      .catch(console.error)
+      .catch(err => {
+        console.error('Failed to load collections from Firestore:', err);
+        setSyncError(err?.message || 'Failed to load cloud data');
+      })
       .finally(() => {
         setCloudSyncReady(true);
         setIsSyncing(false);
@@ -258,11 +295,122 @@ export default function App() {
   // Save to Firestore when collections change
   useEffect(() => {
     if (!cloudSyncReady || !user) return;
+    if (hasLocalImportPendingSync) return; // Keep Local: Do not auto-push to cloud until user manually syncs!
     setIsSyncing(true);
+    setSyncError(null);
     saveCollectionsToFirestore(user.uid, collections)
-      .catch(console.error)
+      .catch(err => {
+        console.error('Firestore auto-save error:', err);
+        setSyncError(err?.message || 'Auto-sync failed');
+      })
       .finally(() => setIsSyncing(false));
-  }, [collections, cloudSyncReady, user]);
+  }, [collections, cloudSyncReady, user, hasLocalImportPendingSync]);
+
+  // -- Import & Manual Sync Handlers --
+  const handleProcessImport = async (importedData: Collection[]) => {
+    if (!user) {
+      if (window.confirm("Overwrite current data with this backup?")) {
+        setFilterCategories([]);
+        setCollections(importedData);
+        if (importedData[0]?.id) {
+          setActiveCollectionId(importedData[0].id);
+        }
+        setIsMobileMenuOpen(false);
+      }
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const cloudData = await loadCollectionsFromFirestore(user.uid);
+      const diff = compareCollections(cloudData || [], importedData);
+
+      if (diff.hasDifference) {
+        setImportDiffData({ diff, importedCollections: importedData });
+        setIsMobileMenuOpen(false);
+      } else {
+        alert("Imported backup is identical to your cloud saved data. No changes detected.");
+      }
+    } catch (err: any) {
+      console.error("Failed to compare imported data with cloud:", err);
+      if (window.confirm("Could not reach cloud to verify differences. Overwrite local data with this backup?")) {
+        setFilterCategories([]);
+        setCollections(importedData);
+        if (importedData[0]?.id) {
+          setActiveCollectionId(importedData[0].id);
+        }
+        setIsMobileMenuOpen(false);
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleConfirmOverrideCloud = async () => {
+    if (!user || !importDiffData) return;
+    setIsProcessingImport(true);
+    setSyncError(null);
+    try {
+      const imported = importDiffData.importedCollections;
+      // Preserve local receipts if imported data doesn't have them
+      const mergedWithReceipts = imported.map(col => ({
+        ...col,
+        products: col.products.map(p => {
+          const localCol = collectionsRef.current.find(c => c.id === col.id);
+          const localProd = localCol?.products.find(lp => lp.id === p.id);
+          if (!p.receipt && localProd?.receipt) {
+            return { ...p, receipt: localProd.receipt };
+          }
+          return p;
+        })
+      }));
+
+      await saveCollectionsToFirestore(user.uid, mergedWithReceipts);
+      setCollections(mergedWithReceipts);
+      if (mergedWithReceipts[0]?.id) {
+        setActiveCollectionId(mergedWithReceipts[0].id);
+      }
+      setFilterCategories([]);
+      setHasLocalImportPendingSync(false);
+      localStorage.removeItem('tech_tracker_pending_sync');
+      setImportDiffData(null);
+    } catch (err: any) {
+      console.error('Failed to override cloud data:', err);
+      setSyncError(err?.message || 'Failed to override cloud data');
+      alert('Failed to save to cloud: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setIsProcessingImport(false);
+    }
+  };
+
+  const handleConfirmKeepLocal = () => {
+    if (!importDiffData) return;
+    const imported = importDiffData.importedCollections;
+    setCollections(imported);
+    if (imported[0]?.id) {
+      setActiveCollectionId(imported[0].id);
+    }
+    setFilterCategories([]);
+    setHasLocalImportPendingSync(true);
+    localStorage.setItem('tech_tracker_pending_sync', 'true');
+    setImportDiffData(null);
+  };
+
+  const handleManualSyncToFirebase = async () => {
+    if (!user) return;
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      await saveCollectionsToFirestore(user.uid, collections);
+      setHasLocalImportPendingSync(false);
+      localStorage.removeItem('tech_tracker_pending_sync');
+    } catch (err: any) {
+      console.error('Manual sync to Firebase failed:', err);
+      setSyncError(err?.message || 'Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -415,11 +563,21 @@ export default function App() {
     );
   };
 
+  const MAX_RECEIPT_SIZE_BYTES = 750 * 1024; // 750 KB
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
         alert('Please upload a PDF file.');
+        e.target.value = '';
+        return;
+      }
+
+      if (file.size > MAX_RECEIPT_SIZE_BYTES) {
+        const sizeKb = (file.size / 1024).toFixed(0);
+        alert(`Receipt file is too large (${sizeKb} KB). Maximum allowed receipt size is 750 KB to ensure fast and reliable cloud sync.`);
+        e.target.value = '';
         return;
       }
       
@@ -514,6 +672,12 @@ export default function App() {
 
   const handleDeleteReceipt = (productId: string) => {
     if (!window.confirm("Remove this receipt?")) return;
+
+    if (user) {
+      deleteReceiptFromFirestore(user.uid, productId).catch(err => {
+        console.warn("Failed to delete receipt from Firestore:", err);
+      });
+    }
 
     const updatedCollections = collections.map(col => {
       if (col.id === activeCollectionId) {
@@ -628,9 +792,29 @@ export default function App() {
         onSignOut={signOut}
         isSyncing={isSyncing}
         authError={authError}
+        hasPendingSync={hasLocalImportPendingSync}
+        onManualSync={handleManualSyncToFirebase}
+        syncError={syncError}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
+        {hasLocalImportPendingSync && user && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 sm:px-6 py-2 flex items-center justify-between gap-3 text-xs text-amber-700 dark:text-amber-400 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="truncate">Imported data is kept local. Cloud save has not been updated yet.</span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleManualSyncToFirebase}
+              disabled={isSyncing}
+              className="h-6 text-[11px] bg-amber-600 hover:bg-amber-700 text-white gap-1 px-2.5 py-0 shrink-0"
+            >
+              <CloudUpload size={12} />
+              {isSyncing ? 'Syncing...' : 'Sync to Firebase'}
+            </Button>
+          </div>
+        )}
         <header className="h-20 bg-white dark:bg-black border-b border-slate-200 dark:border-zinc-800 px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors duration-200 gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button 
@@ -858,6 +1042,18 @@ export default function App() {
         >
           <Plus size={32} className="transition-transform duration-500 group-hover:rotate-90" />
         </button>
+      )}
+
+      {/* Import Difference Conflict Modal */}
+      {importDiffData && (
+        <ImportDiffModal
+          isOpen={!!importDiffData}
+          onClose={() => setImportDiffData(null)}
+          diffResult={importDiffData.diff}
+          onConfirmOverrideCloud={handleConfirmOverrideCloud}
+          onConfirmKeepLocal={handleConfirmKeepLocal}
+          isProcessing={isProcessingImport}
+        />
       )}
 
       {/* Undo Toast */}
