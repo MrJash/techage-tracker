@@ -881,12 +881,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                       </div>
                       <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-emerald-500">
-                        <li>Reorganized General settings into 2 big cards with nested sections for storage, data portability, and cloud management.</li>
-                        <li>Expanded Settings modal popup dimensions for improved visibility on desktop screens.</li>
-                        <li>Added new 'Short' age display format (<code className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-1 py-0.5 rounded">3y 4m</code>).</li>
-                        <li>Real-time synchronization between the header theme toggle and General settings.</li>
-                        <li>Fixed collection launch persistence on browser refresh.</li>
-                        <li>Symmetric hover effects and pixel-perfect badge alignment for CSV/JSON exports.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Structured</strong> General settings into 2 big cards with nested sections for storage, data portability, and cloud management.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Enlarged</strong> Settings modal popup dimensions (<code className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-1 py-0.5 rounded">max-w-4xl</code>) for improved visibility on desktop screens.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> new 'Short' age display format (<code className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-1 py-0.5 rounded">3y 4m</code>).</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> real-time synchronization between the header theme toggle and General settings state.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> collection launch persistence on browser refresh to strictly honor user preferences.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Refined</strong> CSV/JSON export buttons with symmetric hover effects and pixel-perfect badge alignment.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> author attribution and in-app release changelog.</li>
                       </ul>
                     </div>
 
@@ -898,12 +899,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                       </div>
                       <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
-                        <li>Curated 8-color palette for product tags with responsive colored filter dots.</li>
-                        <li>Theme Mode selector supporting System (Auto), Dark, and Light mode presets.</li>
-                        <li>Storage & Receipt Footprint meter with 5 MB localStorage quota tracker.</li>
-                        <li>Cloud Resync troubleshooting button and guarded Danger Zone workspace reset.</li>
-                        <li>Default Warranty Duration and Default Opening Collection preferences.</li>
-                        <li>Hardened Firestore security rules v2 permitting authorized preference synchronization.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> curated 8-color palette for product tags with responsive colored filter dots.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> Theme Mode selector supporting System (Auto), Dark, and Light mode presets.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> Storage & Receipt Footprint meter with 5 MB localStorage quota tracker.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> Cloud Resync troubleshooting utility and guarded Danger Zone workspace reset.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> Default Warranty Duration and Default Opening Collection preferences.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Updated</strong> Firestore security rules v2 to authorize preference synchronization.</li>
                       </ul>
                     </div>
 
@@ -915,10 +916,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                       </div>
                       <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
-                        <li>Dedicated multi-tab Settings Modal (Preferences, General, About).</li>
-                        <li>Comprehensive multi-currency engine supporting 9 global currencies with real-time formatting.</li>
-                        <li>Inline morphing export action bar for quick CSV and JSON downloads.</li>
-                        <li>Dedicated cloud receipts subcollection architecture with 750 KB item ceiling.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> dedicated multi-tab Settings Modal (Preferences, General, About).</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> multi-currency engine supporting 9 global currencies with real-time formatting.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> inline morphing export action bar for quick CSV and JSON downloads.</li>
+                        <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Architected</strong> dedicated cloud receipts subcollection with 750 KB item ceiling.</li>
                       </ul>
                     </div>
                   </div>

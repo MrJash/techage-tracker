@@ -99,31 +99,31 @@ Configured under `rules_version = '2'`:
 ## 4. Release History Summary
 
 ### `v1.4.0` (November 2026)
-- Reorganized General Settings into 2 big cards with nested cards for Inventory, Storage, Data Portability, and Google Account & Cloud Services.
-- Expanded Settings modal popup dimensions (`max-w-4xl`, `h-[760px]`) for desktop visibility.
-- Added 'Short' age display format (`3y 4m`).
-- Real-time synchronization between the header animated theme toggler and General settings.
-- Fixed collection launch persistence on browser refresh.
-- Balanced symmetric separator line spacing in the About changelog.
-- Symmetrical hover effects and pixel-perfect badge alignment for CSV/JSON export buttons.
-- Added author credits (*"Crafted with ❤️ by Jash Mewada"*) and in-app Changelog tracker.
+- **Structured** General Settings into 2 big cards with nested cards for Inventory, Storage, Data Portability, and Google Account & Cloud Services.
+- **Enlarged** Settings modal popup dimensions (`max-w-4xl`, `h-[760px]`) for enhanced desktop visibility.
+- **Added** 'Short' age display format (`3y 4m`).
+- **Implemented** real-time synchronization between the header animated theme toggler and General settings.
+- **Fixed** collection launch persistence on browser refresh to honor user preferences.
+- **Balanced** symmetric separator line spacing in the About changelog.
+- **Refined** CSV/JSON export buttons with symmetric hover effects and pixel-perfect badge alignment.
+- **Added** author credits (*"Crafted with ❤️ by Jash Mewada"*) and in-app Changelog tracker.
 
 ### `v1.3.0`
-- Curated 8-color palette for product tags with responsive colored filter dots.
-- Theme Mode selector supporting System (Auto), Dark, and Light mode presets.
-- Storage & Receipt Footprint meter with 5 MB localStorage quota tracker.
-- Cloud Resync troubleshooting button and guarded Danger Zone workspace reset.
-- Default Warranty Duration and Default Opening Collection preferences.
-- Hardened Firestore security rules v2 permitting authorized preference synchronization.
+- **Added** curated 8-color palette for product tags with responsive colored filter dots.
+- **Implemented** Theme Mode selector supporting System (Auto), Dark, and Light mode presets.
+- **Added** Storage & Receipt Footprint meter with 5 MB localStorage quota tracker.
+- **Implemented** Cloud Resync troubleshooting utility and guarded Danger Zone workspace reset.
+- **Added** Default Warranty Duration and Default Opening Collection preferences.
+- **Updated** Firestore security rules v2 to strictly validate and authorize preference synchronization.
 
 ### `v1.2.0`
-- Dedicated multi-tab Settings Modal (Preferences, General, About).
-- Comprehensive multi-currency engine supporting 9 global currencies with real-time formatting.
-- Inline morphing export action bar for quick CSV and JSON downloads.
-- Dedicated cloud receipts subcollection architecture with 750 KB item ceiling.
+- **Implemented** dedicated multi-tab Settings Modal (Preferences, General, About).
+- **Added** multi-currency engine supporting 9 global currencies with real-time formatting.
+- **Implemented** inline morphing export action bar for quick CSV and JSON downloads.
+- **Architected** dedicated cloud receipts subcollection architecture with 750 KB item ceiling.
 
 ### `v1.0.0`
-- Initial release: Core lifespan calculation, collection groupings, warranty countdown, and Google Cloud sync.
+- **Implemented** initial release: Core lifespan calculation, collection groupings, warranty countdown, and Google Cloud sync.
 
 ---
 
