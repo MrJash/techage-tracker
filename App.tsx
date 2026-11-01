@@ -17,7 +17,7 @@ import { useImportExport } from './hooks/useImportExport';
 import { ImportDiffModal } from './components/ImportDiffModal';
 import { compareCollections, ImportDiffResult } from './utils/diffHelpers';
 import { useAuth } from './hooks/useAuth';
-import { loadCollectionsFromFirestore, saveCollectionsToFirestore, deleteReceiptFromFirestore, clearReceiptSyncCache } from './lib/firestoreService';
+import { loadCollectionsFromFirestore, saveCollectionsToFirestore, deleteReceiptFromFirestore, clearReceiptSyncCache, loadUserPreferencesFromFirestore, saveUserPreferencesToFirestore, UserPreferences } from './lib/firestoreService';
 
 import { 
   AlertDialog, 
@@ -38,13 +38,25 @@ import {
   DropdownMenuLabel,
 } from './components/ui/dropdown-menu';
 
-import { Plus, Menu, CloudUpload, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, IndianRupee, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
-
-
-
+import { Plus, Menu, CloudUpload, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon, Search, Command, Settings } from 'lucide-react';
+import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { SettingsModal, ThemeMode } from './components/SettingsModal';
+import { CurrencyCode, DEFAULT_CURRENCY, formatPrice, SUPPORTED_CURRENCIES } from './utils/currency';
+import { AgeFormat } from './utils/dateHelpers';
+import { 
+  getLocalTagColors, 
+  saveLocalTagColors, 
+  TagColorId, 
+  getTagDotColor 
+} from './utils/tagColors';
 
 const STORAGE_KEY = 'tech_tracker_data';
 const THEME_KEY = 'tech_tracker_theme';
+const CURRENCY_KEY = 'tech_tracker_currency';
+const AGE_FORMAT_KEY = 'techage_pref_age_format';
+const DEFAULT_WARRANTY_KEY = 'techage_pref_default_warranty';
+const DEFAULT_COLLECTION_PREF_KEY = 'techage_pref_default_collection';
+const LAST_ACTIVE_COLLECTION_KEY = 'techage_last_active_collection';
 
 // Default initial state
 const DEFAULT_COLLECTIONS: Collection[] = [
@@ -61,9 +73,11 @@ const EMPTY_FORM = {
   purchaseMonth: new Date().getMonth(),
   purchaseYear: new Date().getFullYear(),
   price: '',
+  currency: DEFAULT_CURRENCY,
   warrantyYears: '',
   receipt: '',
-  condition: ''
+  condition: '',
+  tags: [] as string[]
 };
 
 export default function App() {
@@ -89,21 +103,237 @@ export default function App() {
   });
 
   const [activeCollectionId, setActiveCollectionId] = useState<string>(() => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-          try {
-              const parsed = JSON.parse(saved);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                  return parsed[0].id;
-              }
-          } catch(e) {}
-      }
-      return 'default';
+    const pref = localStorage.getItem(DEFAULT_COLLECTION_PREF_KEY) || 'last-active';
+    const lastActive = localStorage.getItem(LAST_ACTIVE_COLLECTION_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    let parsedCols: Collection[] = DEFAULT_COLLECTIONS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) parsedCols = parsed;
+      } catch (e) {}
+    }
+
+    if (pref === 'last-active' && lastActive && parsedCols.some(c => c.id === lastActive)) {
+      return lastActive;
+    }
+    if (pref !== 'last-active' && parsedCols.some(c => c.id === pref)) {
+      return pref;
+    }
+    return parsedCols[0]?.id || 'default';
   });
+
+  const handleSelectCollection = (id: string) => {
+    setActiveCollectionId(id);
+    localStorage.setItem(LAST_ACTIVE_COLLECTION_KEY, id);
+  };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Theme Mode (system / light / dark)
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    return (localStorage.getItem(THEME_KEY) as ThemeMode) || 'system';
+  });
+
+  const applyThemeMode = (mode: ThemeMode) => {
+    if (mode === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    } else if (mode === 'light') {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    } else {
+      // system
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemDark) {
+        document.documentElement.classList.add('dark');
+        setIsDarkMode(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        setIsDarkMode(false);
+      }
+    }
+  };
+
+  // Full Preferences Helper for Cloud Firestore Sync
+  const getFullPreferences = (overrides?: Partial<UserPreferences>): UserPreferences => ({
+    defaultCurrency: currency,
+    ageFormat,
+    defaultWarranty,
+    defaultOpeningCollection,
+    themeMode,
+    tagColors,
+    ...overrides,
+  });
+
+  const savePreferencesToCloud = (partialPrefs: Partial<UserPreferences>) => {
+    if (!user) return;
+    const fullPrefs = getFullPreferences(partialPrefs);
+    saveUserPreferencesToFirestore(user.uid, fullPrefs).catch(err => {
+      console.warn('Failed to sync preferences to Firestore:', err);
+    });
+  };
+
+  const handleThemeModeChange = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    localStorage.setItem(THEME_KEY, mode);
+    applyThemeMode(mode);
+    savePreferencesToCloud({ themeMode: mode });
+  };
+
+  // Age Display Format Preference
+  const [ageFormat, setAgeFormat] = useState<AgeFormat>(() => {
+    return (localStorage.getItem(AGE_FORMAT_KEY) as AgeFormat) || 'detailed';
+  });
+
+  const handleAgeFormatChange = (format: AgeFormat) => {
+    setAgeFormat(format);
+    localStorage.setItem(AGE_FORMAT_KEY, format);
+    savePreferencesToCloud({ ageFormat: format });
+  };
+
+  // Default Warranty Duration Preference (years)
+  const [defaultWarranty, setDefaultWarranty] = useState<number>(() => {
+    const saved = localStorage.getItem(DEFAULT_WARRANTY_KEY);
+    return saved !== null ? Number(saved) : 1;
+  });
+
+  const handleDefaultWarrantyChange = (years: number) => {
+    setDefaultWarranty(years);
+    localStorage.setItem(DEFAULT_WARRANTY_KEY, years.toString());
+    savePreferencesToCloud({ defaultWarranty: years });
+  };
+
+  // Default Opening Collection Preference
+  const [defaultOpeningCollection, setDefaultOpeningCollection] = useState<string>(() => {
+    return localStorage.getItem(DEFAULT_COLLECTION_PREF_KEY) || 'last-active';
+  });
+
+  const handleDefaultOpeningCollectionChange = (val: string) => {
+    setDefaultOpeningCollection(val);
+    localStorage.setItem(DEFAULT_COLLECTION_PREF_KEY, val);
+    savePreferencesToCloud({ defaultOpeningCollection: val });
+  };
+
+  // Currency state
+  const [currency, setCurrency] = useState<CurrencyCode>(() => {
+    const saved = localStorage.getItem(CURRENCY_KEY);
+    return (saved as CurrencyCode) || DEFAULT_CURRENCY;
+  });
+
+  const handleCurrencyChange = (newCurrency: CurrencyCode) => {
+    setCurrency(newCurrency);
+    localStorage.setItem(CURRENCY_KEY, newCurrency);
+    savePreferencesToCloud({ defaultCurrency: newCurrency });
+  };
+
+  // Tag Colors state
+  const [tagColors, setTagColors] = useState<Record<string, TagColorId>>(() => getLocalTagColors());
+
+  const handleSetTagColor = (tagName: string, colorId: TagColorId) => {
+    const updated = { ...tagColors, [tagName.toLowerCase()]: colorId };
+    setTagColors(updated);
+    saveLocalTagColors(updated);
+    savePreferencesToCloud({ tagColors: updated });
+  };
+
+  // Settings Modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // General Toast message state
+  const [generalToastMessage, setGeneralToastMessage] = useState<string | null>(null);
+
+  // Local storage footprint calculation
+  const { totalReceiptsCount, totalReceiptsBytes } = useMemo(() => {
+    let count = 0;
+    let bytes = 0;
+    collections.forEach(col => {
+      (col.products || []).forEach(p => {
+        if (p.receipt) {
+          count++;
+          bytes += p.receipt.length;
+        }
+      });
+    });
+    return { totalReceiptsCount: count, totalReceiptsBytes: bytes };
+  }, [collections]);
+
+  // Cloud Resync / Clear Local Cache handler
+  const handleCloudResync = async () => {
+    if (!user) {
+      setGeneralToastMessage('Sign in with Google required to resync from Cloud');
+      return;
+    }
+    setIsSyncing(true);
+    clearReceiptSyncCache();
+    try {
+      const cloudCols = await loadCollectionsFromFirestore(user.uid);
+      if (cloudCols && cloudCols.length > 0) {
+        setCollections(cloudCols);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudCols));
+        setGeneralToastMessage('Successfully refreshed and synced from Cloud Firestore');
+      } else {
+        setGeneralToastMessage('No cloud backup found for this account');
+      }
+    } catch (err) {
+      setGeneralToastMessage('Failed to resync from Cloud Firestore');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Danger Zone: Reset All Workspace Data handler
+  const handleResetAllData = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LAST_ACTIVE_COLLECTION_KEY);
+      localStorage.removeItem('techage_tag_colors');
+      clearReceiptSyncCache();
+      setCollections(DEFAULT_COLLECTIONS);
+      setActiveCollectionId('default');
+      setSelectedProductIds([]);
+      setIsSelectMode(false);
+      setIsSettingsOpen(false);
+      setGeneralToastMessage('Workspace and local storage have been reset');
+    } catch (err) {
+      console.error('Failed to reset local data:', err);
+    }
+  };
+
+  // Global Search state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null);
+
+  // Global shortcut: Ctrl+K or Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSelectProductFromSearch = (collectionId: string, productId: string) => {
+    setActiveCollectionId(collectionId);
+    setIsSearchOpen(false);
+    setHighlightedProductId(productId);
+
+    setTimeout(() => {
+      const el = document.getElementById(`product-${productId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+
+    setTimeout(() => {
+      setHighlightedProductId(prev => (prev === productId ? null : prev));
+    }, 2500);
+  };
 
   // Cloud sync state
   const [cloudSyncReady, setCloudSyncReady] = useState(false);
@@ -137,7 +367,7 @@ export default function App() {
   } = useDragAndDrop(collections, setCollections, activeCollectionId);
 
   // Import Export State via custom hook
-  const { handleExportData, handleImportData } = useImportExport(
+  const { handleExportData, handleExportCSV, handleImportData } = useImportExport(
     collections, 
     setCollections, 
     setFilterCategories, 
@@ -227,17 +457,27 @@ export default function App() {
 
   // -- Effects --
 
-  // Load Theme
+  // Apply theme mode & listen to system changes
   useEffect(() => {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
+    applyThemeMode(themeMode);
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      const currentMode = localStorage.getItem(THEME_KEY) as ThemeMode;
+      if (!currentMode || currentMode === 'system') {
+        if (e.matches) {
+          document.documentElement.classList.add('dark');
+          setIsDarkMode(true);
+        } else {
+          document.documentElement.classList.remove('dark');
+          setIsDarkMode(false);
+        }
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+    return () => mediaQuery.removeEventListener('change', handleMediaChange);
+  }, [themeMode]);
 
   // Save to localStorage
   useEffect(() => {
@@ -253,6 +493,36 @@ export default function App() {
     }
     setIsSyncing(true);
     setSyncError(null);
+    // Load cloud collections and all preferences
+    loadUserPreferencesFromFirestore(user.uid).then(prefs => {
+      if (!prefs) return;
+      if (prefs.defaultCurrency && SUPPORTED_CURRENCIES.some(c => c.code === prefs.defaultCurrency)) {
+        setCurrency(prefs.defaultCurrency as CurrencyCode);
+        localStorage.setItem(CURRENCY_KEY, prefs.defaultCurrency);
+      }
+      if (prefs.ageFormat) {
+        setAgeFormat(prefs.ageFormat as AgeFormat);
+        localStorage.setItem(AGE_FORMAT_KEY, prefs.ageFormat);
+      }
+      if (prefs.defaultWarranty !== undefined) {
+        setDefaultWarranty(prefs.defaultWarranty);
+        localStorage.setItem(DEFAULT_WARRANTY_KEY, prefs.defaultWarranty.toString());
+      }
+      if (prefs.defaultOpeningCollection) {
+        setDefaultOpeningCollection(prefs.defaultOpeningCollection);
+        localStorage.setItem(DEFAULT_COLLECTION_PREF_KEY, prefs.defaultOpeningCollection);
+      }
+      if (prefs.themeMode) {
+        setThemeMode(prefs.themeMode as ThemeMode);
+        localStorage.setItem(THEME_KEY, prefs.themeMode);
+        applyThemeMode(prefs.themeMode as ThemeMode);
+      }
+      if (prefs.tagColors && typeof prefs.tagColors === 'object') {
+        setTagColors(prefs.tagColors as Record<string, TagColorId>);
+        saveLocalTagColors(prefs.tagColors as Record<string, TagColorId>);
+      }
+    }).catch(() => {});
+
     loadCollectionsFromFirestore(user.uid)
       .then(cloudData => {
         if (cloudData) {
@@ -273,10 +543,24 @@ export default function App() {
             })
           }));
           setCollections(merged);
-          setActiveCollectionId(merged[0].id);
+          
+          // Respect default opening collection preference or last-active
+          const preferredColId = localStorage.getItem(DEFAULT_COLLECTION_PREF_KEY) || 'last-active';
+          const lastActiveColId = localStorage.getItem(LAST_ACTIVE_COLLECTION_KEY);
+
+          if (preferredColId === 'last-active' && lastActiveColId && merged.some(c => c.id === lastActiveColId)) {
+            setActiveCollectionId(lastActiveColId);
+          } else if (preferredColId !== 'last-active' && merged.some(c => c.id === preferredColId)) {
+            setActiveCollectionId(preferredColId);
+          } else if (activeCollectionId && merged.some(c => c.id === activeCollectionId)) {
+            // Keep current active collection if it exists in cloud data
+            setActiveCollectionId(activeCollectionId);
+          } else if (merged[0]?.id) {
+            setActiveCollectionId(merged[0].id);
+          }
         } else {
-          // No cloud data yet — upload current local data
-          saveCollectionsToFirestore(user.uid, collectionsRef.current).catch(err => {
+          // No cloud data yet — upload current local data with preferences
+          saveCollectionsToFirestore(user.uid, collectionsRef.current, getFullPreferences()).catch(err => {
             console.error(err);
             setSyncError(err?.message || 'Initial sync failed');
           });
@@ -292,19 +576,19 @@ export default function App() {
       });
   }, [user]);
 
-  // Save to Firestore when collections change
+  // Save to Firestore when collections or preferences change
   useEffect(() => {
     if (!cloudSyncReady || !user) return;
     if (hasLocalImportPendingSync) return; // Keep Local: Do not auto-push to cloud until user manually syncs!
     setIsSyncing(true);
     setSyncError(null);
-    saveCollectionsToFirestore(user.uid, collections)
+    saveCollectionsToFirestore(user.uid, collections, getFullPreferences())
       .catch(err => {
         console.error('Firestore auto-save error:', err);
         setSyncError(err?.message || 'Auto-sync failed');
       })
       .finally(() => setIsSyncing(false));
-  }, [collections, cloudSyncReady, user, hasLocalImportPendingSync]);
+  }, [collections, currency, ageFormat, defaultWarranty, defaultOpeningCollection, themeMode, tagColors, cloudSyncReady, user, hasLocalImportPendingSync]);
 
   // -- Import & Manual Sync Handlers --
   const handleProcessImport = async (importedData: Collection[]) => {
@@ -323,7 +607,7 @@ export default function App() {
     setIsSyncing(true);
     try {
       const cloudData = await loadCollectionsFromFirestore(user.uid);
-      const diff = compareCollections(cloudData || [], importedData);
+      const diff = compareCollections(cloudData || [], importedData, currency);
 
       if (diff.hasDifference) {
         setImportDiffData({ diff, importedCollections: importedData });
@@ -365,7 +649,7 @@ export default function App() {
         })
       }));
 
-      await saveCollectionsToFirestore(user.uid, mergedWithReceipts);
+      await saveCollectionsToFirestore(user.uid, mergedWithReceipts, getFullPreferences());
       setCollections(mergedWithReceipts);
       if (mergedWithReceipts[0]?.id) {
         setActiveCollectionId(mergedWithReceipts[0].id);
@@ -401,7 +685,7 @@ export default function App() {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      await saveCollectionsToFirestore(user.uid, collections);
+      await saveCollectionsToFirestore(user.uid, collections, getFullPreferences());
       setHasLocalImportPendingSync(false);
       localStorage.removeItem('tech_tracker_pending_sync');
     } catch (err: any) {
@@ -426,9 +710,33 @@ export default function App() {
 
   // -- Computed --
   const activeCollection = collections.find(c => c.id === activeCollectionId) || collections[0];
-  const totalValuation = activeCollection.products.reduce((sum, p) => sum + (p.price || 0), 0);
+  // Multi-currency valuation grouped by currency
+  const valuationsByCurrency = useMemo(() => {
+    if (!activeCollection) return {};
+    const map: Record<string, number> = {};
+    for (const p of activeCollection.products) {
+      if (p.price && !isNaN(p.price) && p.price > 0) {
+        const curr = p.currency || currency || DEFAULT_CURRENCY;
+        map[curr] = (map[curr] || 0) + p.price;
+      }
+    }
+    return map;
+  }, [activeCollection, currency]);
 
-  
+  const valuationEntries = Object.entries(valuationsByCurrency);
+
+  const allUniqueTags = useMemo(() => {
+    const set = new Set<string>();
+    collections.forEach(col => {
+      (col.products || []).forEach(p => {
+        p.tags?.forEach(t => {
+          if (t && t.trim()) set.add(t.trim());
+        });
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [collections]);
+
   const activeSortOrder = activeCollection?.sortOrder || 'newest';
 
   const filteredAndSortedProducts = useMemo(() => {
@@ -439,6 +747,7 @@ export default function App() {
     if (filterCategories.length > 0) {
       const selectedCategoryFilters = filterCategories.filter(f => CATEGORIES.includes(f));
       const selectedWarrantyFilters = filterCategories.filter(f => f.startsWith('warranty-'));
+      const selectedTagFilters = filterCategories.filter(f => f.startsWith('tag:')).map(f => f.slice(4));
 
       // If category filters are selected, product must match at least one selected category
       if (selectedCategoryFilters.length > 0) {
@@ -461,6 +770,11 @@ export default function App() {
           
           return false;
         });
+      }
+
+      // If tag filters are selected, product must match at least one selected tag
+      if (selectedTagFilters.length > 0) {
+        result = result.filter(p => p.tags && selectedTagFilters.some(t => p.tags!.includes(t)));
       }
     }
 
@@ -502,6 +816,14 @@ export default function App() {
       label: 'Category',
       options: CATEGORIES.map(c => ({ label: c, value: c })),
     },
+    ...(allUniqueTags.length > 0 ? [{
+      label: 'Tags',
+      options: allUniqueTags.map(t => ({ 
+        label: `#${t}`, 
+        value: `tag:${t}`,
+        dotColor: getTagDotColor(tagColors[t.toLowerCase()]),
+      })),
+    }] : []),
   ];
 
   const categoryOptions = CATEGORIES.map(c => ({ label: c, value: c }));
@@ -589,6 +911,16 @@ export default function App() {
     }
   };
 
+  const handleOpenAddModal = () => {
+    setFormData({
+      ...EMPTY_FORM,
+      currency: localStorage.getItem('tech_tracker_currency') || currency || DEFAULT_CURRENCY,
+      warrantyYears: defaultWarranty > 0 ? defaultWarranty : undefined,
+      tags: []
+    });
+    setIsAddModalOpen(true);
+  };
+
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
@@ -600,9 +932,11 @@ export default function App() {
       purchaseMonth: Number(formData.purchaseMonth),
       purchaseYear: Number(formData.purchaseYear),
       price: formData.price ? Number(formData.price) : undefined,
+      currency: formData.currency || currency || DEFAULT_CURRENCY,
       warrantyYears: formData.warrantyYears !== '' ? Number(formData.warrantyYears) : undefined,
       receipt: formData.receipt || undefined,
       condition: formData.condition || undefined,
+      tags: Array.isArray(formData.tags) && formData.tags.length > 0 ? formData.tags : undefined,
       createdAt: Date.now()
     };
 
@@ -626,9 +960,11 @@ export default function App() {
       purchaseMonth: product.purchaseMonth,
       purchaseYear: product.purchaseYear,
       price: product.price?.toString() || '',
-      warrantyYears: product.warrantyYears?.toString() || '',
+      currency: product.currency || currency || DEFAULT_CURRENCY,
+      warrantyYears: product.warrantyYears !== undefined ? product.warrantyYears.toString() : '',
       receipt: product.receipt || '',
       condition: product.condition || '',
+      tags: product.tags || []
     });
   };
 
@@ -649,9 +985,11 @@ export default function App() {
                   purchaseMonth: Number(formData.purchaseMonth),
                   purchaseYear: Number(formData.purchaseYear),
                   price: formData.price ? Number(formData.price) : undefined,
+                  currency: formData.currency || p.currency || currency || DEFAULT_CURRENCY,
                   warrantyYears: formData.warrantyYears !== '' ? Number(formData.warrantyYears) : undefined,
                   receipt: formData.receipt || undefined,
                   condition: formData.condition || undefined,
+                  tags: Array.isArray(formData.tags) && formData.tags.length > 0 ? formData.tags : undefined,
                 }
               : p
           )
@@ -779,11 +1117,12 @@ export default function App() {
       <Sidebar 
         collections={collections}
         activeCollectionId={activeCollectionId}
-        onSelectCollection={setActiveCollectionId}
+        onSelectCollection={handleSelectCollection}
         onAddCollection={handleAddCollection}
         onDeleteCollection={handleDeleteCollection}
         onRenameCollection={handleRenameCollection}
         onExportData={handleExportData}
+        onExportCSV={handleExportCSV}
         onImportData={handleImportData}
         isOpenMobile={isMobileMenuOpen}
         setIsOpenMobile={setIsMobileMenuOpen}
@@ -815,35 +1154,209 @@ export default function App() {
             </Button>
           </div>
         )}
-        <header className="h-20 bg-white dark:bg-black border-b border-slate-200 dark:border-zinc-800 px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors duration-200 gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <button 
-              className="lg:hidden shrink-0 mr-1 p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800 rounded-lg"
-              onClick={() => setIsMobileMenuOpen(true)}
-            >
-              <Menu size={24} />
-            </button>
-            <div className="truncate">
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white truncate">{activeCollection.name}</h1>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                {activeCollection.products.length} Items
-              </p>
-            </div>
-            
-            {totalValuation > 0 && (
-              <div 
-                className="hidden sm:flex shrink-0 items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/50 text-sm font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 cursor-default"
-                title="Total Valuation of Collection"
+        <header className="bg-white dark:bg-black border-b border-slate-200 dark:border-zinc-800 shrink-0 transition-colors duration-200 h-auto md:h-20">
+          {/* Mobile 2-line layout (< md:) */}
+          <div className="md:hidden px-4 py-2.5 flex flex-col gap-2">
+            {/* Top row: Hamburger on left, all action icons on right */}
+            <div className="flex items-center justify-between">
+              <button 
+                type="button"
+                className="shrink-0 p-2 -ml-1.5 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(true)}
+                title="Open navigation menu"
+                aria-label="Open navigation menu"
               >
-                <IndianRupee size={14} className="mr-1 text-slate-500 dark:text-zinc-400" />
-                {totalValuation.toLocaleString('en-IN')}
+                <Menu size={22} className="shrink-0" />
+              </button>
+
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                  title="Search all products (Ctrl+K)"
+                  aria-label="Search all products"
+                >
+                  <Search size={16} />
+                </button>
+
+                {isSelectMode ? (
+                  <>
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      onClick={handleBatchDelete} 
+                      disabled={selectedProductIds.length === 0} 
+                      title="Delete Selected" 
+                      className="h-9 w-9 shrink-0"
+                    >
+                      <Trash2 size={15} />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          disabled={selectedProductIds.length === 0} 
+                          title="Move Selected" 
+                          className="h-9 w-9 shrink-0 border border-slate-200 dark:border-zinc-700"
+                        >
+                          <FolderInput size={15} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700">
+                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
+                          Move to
+                        </DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                          {collections.filter(c => c.id !== activeCollectionId).map(col => (
+                            <DropdownMenuItem 
+                              key={col.id} 
+                              onClick={() => handleBatchMove(col.id)} 
+                              className="gap-2 cursor-pointer text-xs"
+                            >
+                              {col.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shrink-0"
+                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
+                      title="Cancel Selection"
+                    >
+                      <XSquare size={15} />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 shrink-0"
+                      onClick={() => { setIsSelectMode(true); }}
+                      title="Select Items"
+                    >
+                      <ListChecks size={16} />
+                    </Button>
+                    <MultiSelect
+                      value={filterCategories}
+                      onChange={setFilterCategories}
+                      options={filterOptions}
+                      placeholder="Filter"
+                      icon={Filter}
+                      iconOnly={true}
+                    />
+                    <SortDropdown
+                      value={activeSortOrder}
+                      onChange={handleSortChange}
+                      options={sortOptions}
+                      iconOnly={true}
+                    />
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
+                  title="Settings"
+                  aria-label="Settings"
+                >
+                  <Settings size={18} />
+                </button>
+
+                <AnimatedThemeToggler 
+                  onThemeToggle={(newMode) => handleThemeModeChange(newMode)}
+                  className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
+                />
               </div>
-            )}
+            </div>
+
+            {/* Bottom row: Collection Name + Count on left, Valuation on right */}
+            <div className="flex items-center justify-between pt-0.5">
+              <div className="min-w-0 pr-2">
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white truncate leading-tight">
+                  {activeCollection.name}
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                  {activeCollection.products.length} Items
+                </p>
+              </div>
+
+              {valuationEntries.length > 0 && (
+                <div 
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/60 text-xs font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700"
+                  title="Total Valuation of Collection"
+                >
+                  {valuationEntries.map(([currCode, sum], i) => (
+                    <React.Fragment key={currCode}>
+                      {i > 0 && <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>}
+                      <span>{formatPrice(sum as number, currCode as CurrencyCode)}</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          
-          <div className="flex items-center gap-3 sm:gap-4">
-             <div className="hidden md:flex items-center gap-3">
+          {/* Desktop & Tablet 1-line layout (md: and above) */}
+          <div className="hidden md:flex h-full px-6 items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+              <button 
+                type="button"
+                className="lg:hidden shrink-0 p-2 -ml-2 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(true)}
+                title="Open navigation menu"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={22} className="shrink-0" />
+              </button>
+              <div className="min-w-0 truncate">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
+                  {activeCollection.name}
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium truncate">
+                  {activeCollection.products.length} Items
+                </p>
+              </div>
+              
+              {valuationEntries.length > 0 && (
+                <div 
+                  className="hidden xl:flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/50 text-sm font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 cursor-default"
+                  title="Total Valuation of Collection"
+                >
+                  {valuationEntries.map(([currCode, sum], i) => (
+                    <React.Fragment key={currCode}>
+                      {i > 0 && <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>}
+                      <span>{formatPrice(sum as number, currCode as CurrencyCode)}</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+              {/* Desktop Full View (xl and above: >= 1280px) */}
+              <div className="hidden xl:flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-slate-500 dark:text-zinc-400 hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-all shadow-sm group min-w-[210px]"
+                  title="Search all products (Ctrl+K)"
+                >
+                  <Search size={15} className="text-slate-400 group-hover:text-slate-900 dark:text-zinc-500 dark:group-hover:text-white shrink-0" />
+                  <span className="flex-1 text-left truncate text-xs text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:group-hover:text-white font-normal">
+                    Search all items...
+                  </span>
+                  <kbd className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-zinc-700 shadow-xs">
+                    <Command size={11} strokeWidth={2.5} className="shrink-0" />
+                    <span className="font-semibold text-[11px]">K</span>
+                  </kbd>
+                </button>
                 {isSelectMode ? (
                   <>
                     <Button variant="destructive" onClick={handleBatchDelete} disabled={selectedProductIds.length === 0} title="Delete Selected" className="h-10 px-3">
@@ -881,14 +1394,14 @@ export default function App() {
                         </DropdownMenuGroup>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                      <Button
-                        variant="outline"
-                        className="h-10 rounded-lg font-normal border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 shadow-sm"
-                        onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
-                      >
-                        <XSquare size={16} className="mr-2" />
-                        Cancel Selection
-                      </Button>
+                    <Button
+                      variant="outline"
+                      className="h-10 rounded-lg font-normal border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 shadow-sm"
+                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
+                    >
+                      <XSquare size={16} className="mr-2" />
+                      Cancel Selection
+                    </Button>
                   </>
                 ) : (
                   <>
@@ -915,27 +1428,115 @@ export default function App() {
                     />
                   </>
                 )}
-             </div>
-             <div className="md:hidden flex items-center gap-1">
-                <MultiSelect
-                  value={filterCategories}
-                  onChange={setFilterCategories}
-                  options={filterOptions}
-                  placeholder="Filter"
-                  icon={Filter}
-                  iconOnly={true}
-                />
-                <SortDropdown
-                  value={activeSortOrder}
-                  onChange={handleSortChange}
-                  options={sortOptions}
-                  iconOnly={true}
-                />
-             </div>
+              </div>
 
-            <AnimatedThemeToggler 
+              {/* Tablet Compact View (md to xl: 768px - 1279px, including iPad Landscape 1024px) */}
+              <div className="flex xl:hidden items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                  title="Search all products (Ctrl+K)"
+                  aria-label="Search all products"
+                >
+                  <Search size={18} />
+                </button>
+
+                {isSelectMode ? (
+                  <>
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      onClick={handleBatchDelete} 
+                      disabled={selectedProductIds.length === 0} 
+                      title="Delete Selected" 
+                      className="h-10 w-10 shrink-0"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          disabled={selectedProductIds.length === 0} 
+                          title="Move Selected" 
+                          className="h-10 w-10 shrink-0 border border-slate-200 dark:border-zinc-700"
+                        >
+                          <FolderInput size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700">
+                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
+                          Move to
+                        </DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                          {collections.filter(c => c.id !== activeCollectionId).map(col => (
+                            <DropdownMenuItem 
+                              key={col.id} 
+                              onClick={() => handleBatchMove(col.id)} 
+                              className="gap-2 cursor-pointer text-xs"
+                            >
+                              {col.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shrink-0"
+                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
+                      title="Cancel Selection"
+                    >
+                      <XSquare size={16} />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 shrink-0"
+                      onClick={() => { setIsSelectMode(true); }}
+                      title="Select Items"
+                    >
+                      <ListChecks size={18} />
+                    </Button>
+                    <MultiSelect
+                      value={filterCategories}
+                      onChange={setFilterCategories}
+                      options={filterOptions}
+                      placeholder="Filter"
+                      icon={Filter}
+                      iconOnly={true}
+                    />
+                    <SortDropdown
+                      value={activeSortOrder}
+                      onChange={handleSortChange}
+                      options={sortOptions}
+                      iconOnly={true}
+                    />
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
+                title="Settings"
+                aria-label="Settings"
+              >
+                <Settings size={20} />
+              </button>
+
+              <AnimatedThemeToggler 
+                onThemeToggle={(newMode) => handleThemeModeChange(newMode)}
                 className="p-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
-            />
+              />
+            </div>
           </div>
         </header>
 
@@ -944,13 +1545,14 @@ export default function App() {
 
             {filteredAndSortedProducts.length === 0 ? (
               <EmptyState 
-                onAdd={() => setIsAddModalOpen(true)}
+                onAdd={handleOpenAddModal}
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pb-24">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 pb-24">
                 {filteredAndSortedProducts.map((product) => (
                   <div 
                     key={product.id}
+                    id={`product-${product.id}`}
                     onDragOver={handleDragOver}
                     className="relative"
                   >
@@ -971,6 +1573,10 @@ export default function App() {
                       isSelected={selectedProductIds.includes(product.id)}
                       onToggleSelect={toggleSelectProduct}
                       onLongPress={handleLongPress}
+                      currency={currency}
+                      isHighlighted={highlightedProductId === product.id}
+                      tagColors={tagColors}
+                      ageFormat={ageFormat}
                     />
                   </div>
                 ))}
@@ -996,6 +1602,10 @@ export default function App() {
             monthOptions={monthOptions}
             yearOptions={yearOptions}
             conditionOptions={conditionOptions}
+            currency={currency}
+            availableTags={allUniqueTags}
+            tagColors={tagColors}
+            onSetTagColor={handleSetTagColor}
           />
           <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
             <Button type="submit" className="w-full">
@@ -1022,6 +1632,10 @@ export default function App() {
             monthOptions={monthOptions}
             yearOptions={yearOptions}
             conditionOptions={conditionOptions}
+            currency={currency}
+            availableTags={allUniqueTags}
+            tagColors={tagColors}
+            onSetTagColor={handleSetTagColor}
           />
           <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
             <Button type="submit" className="w-full">
@@ -1036,7 +1650,7 @@ export default function App() {
       {/* Floating Action Button (FAB) */}
       {activeCollection.products.length > 0 && (
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="fixed bottom-8 right-8 z-40 flex items-center justify-center w-16 h-16 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.2)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.1)] hover:scale-110 active:scale-95 transition-all duration-300 group"
           title="Add Product"
         >
@@ -1056,12 +1670,59 @@ export default function App() {
         />
       )}
 
+      {/* Global Search Modal */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        collections={collections}
+        currency={currency}
+        onSelectProduct={handleSelectProductFromSearch}
+        tagColors={tagColors}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currency={currency}
+        onCurrencyChange={handleCurrencyChange}
+        ageFormat={ageFormat}
+        onAgeFormatChange={handleAgeFormatChange}
+        defaultWarranty={defaultWarranty}
+        onDefaultWarrantyChange={handleDefaultWarrantyChange}
+        collections={collections}
+        defaultOpeningCollection={defaultOpeningCollection}
+        onDefaultOpeningCollectionChange={handleDefaultOpeningCollectionChange}
+        themeMode={themeMode}
+        onThemeModeChange={handleThemeModeChange}
+        totalReceiptsCount={totalReceiptsCount}
+        totalReceiptsBytes={totalReceiptsBytes}
+        user={user}
+        isSyncing={isSyncing}
+        onCloudResync={handleCloudResync}
+        totalProductsCount={collections.reduce((sum, col) => sum + (col.products?.length || 0), 0)}
+        totalCollectionsCount={collections.length}
+        onExportCSV={handleExportCSV}
+        onExportJSON={handleExportData}
+        onSignOut={signOut}
+        onSignIn={signIn}
+        onResetAllData={handleResetAllData}
+      />
+
       {/* Undo Toast */}
       {deletedProductInfo && (
         <Toast 
           message={`Deleted ${deletedProductInfo.product.name}`}
           onUndo={undoDelete}
           onClose={() => setDeletedProductInfo(null)}
+        />
+      )}
+
+      {/* General Notification Toast */}
+      {generalToastMessage && (
+        <Toast
+          message={generalToastMessage}
+          onClose={() => setGeneralToastMessage(null)}
         />
       )}
     </div>

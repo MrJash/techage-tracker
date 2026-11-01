@@ -14,6 +14,7 @@ import { Button } from './ui/button';
 interface SelectOption {
   value: string;
   label: string;
+  dotColor?: string;
 }
 
 interface SelectGroup {
@@ -110,10 +111,22 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                 <DropdownMenuItem
                   key={option.value}
                   onSelect={(e) => { e.preventDefault(); toggleOption(option.value); }}
-                  className="cursor-pointer flex items-center gap-2"
+                  className="cursor-pointer flex items-center justify-between gap-2"
                 >
-                  {value.includes(option.value) ? <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" /> : <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />}
-                  {option.label}
+                  <div className="flex items-center gap-2 min-w-0">
+                    {value.includes(option.value) ? (
+                      <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" />
+                    ) : (
+                      <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                    )}
+                    <span className="truncate">{option.label}</span>
+                  </div>
+                  {option.dotColor && (
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/15 dark:ring-white/20" 
+                      style={{ backgroundColor: option.dotColor }}
+                    />
+                  )}
                 </DropdownMenuItem>
               ))}
               {idx < options.length - 1 && <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800 my-1" />}
@@ -125,10 +138,22 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
               <DropdownMenuItem
                 key={option.value}
                 onSelect={(e) => { e.preventDefault(); toggleOption(option.value); }}
-                className="cursor-pointer flex items-center gap-2"
+                className="cursor-pointer flex items-center justify-between gap-2"
               >
-                {value.includes(option.value) ? <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" /> : <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />}
-                {option.label}
+                <div className="flex items-center gap-2 min-w-0">
+                  {value.includes(option.value) ? (
+                    <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" />
+                  ) : (
+                    <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                  )}
+                  <span className="truncate">{option.label}</span>
+                </div>
+                {option.dotColor && (
+                  <span 
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/15 dark:ring-white/20" 
+                    style={{ backgroundColor: option.dotColor }}
+                  />
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>

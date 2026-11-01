@@ -1,8 +1,38 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId} (matches Firebase Auth UID)
+// Fields:
+//   - collections: list (optional, max 100 items) - User's tech gear collections
+//   - preferences: map (optional) - User settings
+//     - defaultCurrency: string (optional, 1-10 chars, e.g. "USD", "EUR", "INR")
+//     - ageFormat: string (optional, 1-20 chars, e.g. "detailed", "compact", "total-months")
+//     - defaultWarranty: number (optional, >= 0 and <= 50) - Default warranty duration in years
+//     - defaultOpeningCollection: string (optional, 1-128 chars) - Preferred initial collection ID
+//     - themeMode: string (optional, 1-10 chars, e.g. "system", "dark", "light")
+//     - tagColors: map (optional, max 50 entries) - Map of custom tag names to color strings
+//   - defaultCurrency: string (optional, 1-10 chars) - Legacy root-level currency setting
+//   - lastSyncedAt: number (optional, timestamp ms) - Client sync timestamp
+//
+// Subcollection: users/{userId}/receipts
+// Document ID: {productId} (matches product ID)
+// Fields:
+//   - productId: string (required, must match document ID, 1-128 chars)
+//   - receipt: string (required, 1-1,040,000 chars, data URL base64 PDF or image)
+//   - updatedAt: number (required, timestamp ms)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -24,13 +54,33 @@ service cloud.firestore {
 
       function isValidUserDoc() {
         let data = request.resource.data;
-        return data.keys().hasOnly(['collections', 'lastSyncedAt'])
-          && data.collections is list
-          && data.collections.size() <= 100
-          && (!('lastSyncedAt' in data) || data.lastSyncedAt is number);
+        return data.keys().size() > 0
+          && data.keys().hasOnly(['collections', 'lastSyncedAt', 'preferences', 'defaultCurrency'])
+          && (!('collections' in data) || (data.collections is list && data.collections.size() <= 100))
+          && (!('lastSyncedAt' in data) || (data.lastSyncedAt is number && data.lastSyncedAt > 0))
+          && (!('preferences' in data) || isValidPreferences(data.preferences))
+          && (!('defaultCurrency' in data) || (data.defaultCurrency is string && data.defaultCurrency.size() >= 1 && data.defaultCurrency.size() <= 10));
       }
 
-      // Subcollection for Option 1: users/{userId}/receipts/{productId}
+      function isValidPreferences(prefs) {
+        return prefs is map
+          && prefs.keys().hasOnly([
+            'defaultCurrency',
+            'ageFormat',
+            'defaultWarranty',
+            'defaultOpeningCollection',
+            'themeMode',
+            'tagColors'
+          ])
+          && (!('defaultCurrency' in prefs) || (prefs.defaultCurrency is string && prefs.defaultCurrency.size() >= 1 && prefs.defaultCurrency.size() <= 10))
+          && (!('ageFormat' in prefs) || (prefs.ageFormat is string && prefs.ageFormat.size() >= 1 && prefs.ageFormat.size() <= 20))
+          && (!('defaultWarranty' in prefs) || (prefs.defaultWarranty is number && prefs.defaultWarranty >= 0 && prefs.defaultWarranty <= 50))
+          && (!('defaultOpeningCollection' in prefs) || (prefs.defaultOpeningCollection is string && prefs.defaultOpeningCollection.size() >= 1 && prefs.defaultOpeningCollection.size() <= 128))
+          && (!('themeMode' in prefs) || (prefs.themeMode is string && prefs.themeMode.size() >= 1 && prefs.themeMode.size() <= 10))
+          && (!('tagColors' in prefs) || (prefs.tagColors is map && prefs.tagColors.size() <= 50));
+      }
+
+      // Subcollection: users/{userId}/receipts/{productId}
       match /receipts/{productId} {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidReceiptDoc(productId);
@@ -41,13 +91,15 @@ service cloud.firestore {
             && data.keys().hasOnly(['productId', 'receipt', 'updatedAt'])
             && data.productId is string
             && data.productId == prodId
+            && data.productId.size() > 0
+            && data.productId.size() <= 128
             && data.updatedAt is number
+            && data.updatedAt > 0
             && data.receipt is string
-            // Enforce max size limit: 750 KB file encoded in base64 is ~1,000,000 characters.
-            // Safe ceiling: 1,040,000 characters (stays safely below Firestore 1 MiB hard doc limit)
-            && data.receipt.size() <= 1040000
+            // Safe ceiling: 1,040,000 characters (~750 KB base64 payload, stays safely below Firestore 1 MiB hard doc limit)
             && data.receipt.size() > 0
-            && data.receipt.matches('^data:application/pdf;base64,.*$');
+            && data.receipt.size() <= 1040000
+            && (data.receipt.matches('^data:application/pdf;base64,.*$') || data.receipt.matches('^data:image/[a-zA-Z0-9.-]+;base64,.*$'));
         }
       }
     }

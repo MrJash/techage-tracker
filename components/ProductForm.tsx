@@ -1,8 +1,24 @@
 import React from 'react';
 import { Select } from './Select';
-import { Eye, Download, X, Upload, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { Eye, Download, X, Upload, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon, ChevronDown, Check, Plus, Tag } from 'lucide-react';
 import { Button } from './ui/button';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { CurrencyCode, SUPPORTED_CURRENCIES, getCurrencyConfig, getDefaultCurrency } from '../utils/currency';
+import { 
+  PREDEFINED_TAG_COLORS, 
+  TagColorId, 
+  getTagColorDef, 
+  DEFAULT_TAG_BADGE_CLASS, 
+  DEFAULT_TAG_DOT_COLOR 
+} from '../utils/tagColors';
 
 interface ProductFormProps {
   formData: any;
@@ -12,6 +28,10 @@ interface ProductFormProps {
   monthOptions: { label: string; value: number }[];
   yearOptions: { label: string; value: number }[];
   conditionOptions?: { label: string; value: string; icon?: any }[];
+  currency?: CurrencyCode;
+  availableTags?: string[];
+  tagColors?: Record<string, string>;
+  onSetTagColor?: (tagName: string, colorId: TagColorId) => void;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -21,9 +41,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   categoryOptions,
   monthOptions,
   yearOptions,
-  conditionOptions
+  conditionOptions,
+  currency,
+  availableTags,
+  tagColors,
+  onSetTagColor,
 }) => {
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
+  const activeCurrencyCode = formData.currency || currency || getDefaultCurrency();
+  const currConfig = getCurrencyConfig(activeCurrencyCode);
+  const priceContainerRef = React.useRef<HTMLDivElement>(null);
+  const [priceBoxWidth, setPriceBoxWidth] = React.useState<number | undefined>(undefined);
+
+  const updatePriceBoxWidth = React.useCallback(() => {
+    if (priceContainerRef.current) {
+      setPriceBoxWidth(priceContainerRef.current.getBoundingClientRect().width);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    updatePriceBoxWidth();
+    window.addEventListener('resize', updatePriceBoxWidth);
+    return () => window.removeEventListener('resize', updatePriceBoxWidth);
+  }, [updatePriceBoxWidth]);
 
   const receiptSizeKb = React.useMemo(() => {
     if (!formData.receipt || typeof formData.receipt !== 'string') return null;
@@ -33,6 +73,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
     return null;
   }, [formData.receipt]);
+
+  const [tagInput, setTagInput] = React.useState('');
+  const [selectedNewTagColor, setSelectedNewTagColor] = React.useState<TagColorId>('blue');
+  const [openTagColorDropdown, setOpenTagColorDropdown] = React.useState<string | null>(null);
+  const [isNewTagColorOpen, setIsNewTagColorOpen] = React.useState(false);
+  const currentTags: string[] = Array.isArray(formData.tags) ? formData.tags : [];
+
+  const handleAddTag = (rawTag: string, colorToAssign?: TagColorId) => {
+    const cleaned = rawTag.trim().replace(/^#+/, '');
+    if (!cleaned) return;
+    if (!currentTags.some(t => t.toLowerCase() === cleaned.toLowerCase())) {
+      setFormData({
+        ...formData,
+        tags: [...currentTags, cleaned]
+      });
+      const chosenColor = colorToAssign || selectedNewTagColor;
+      if (onSetTagColor) {
+        onSetTagColor(cleaned, chosenColor);
+      }
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData({
+      ...formData,
+      tags: currentTags.filter(t => t !== tagToRemove)
+    });
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    }
+  };
 
   return (
     <>
@@ -68,14 +144,76 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
             Price
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-zinc-500 text-sm">₹</span>
+          <div 
+            ref={priceContainerRef}
+            className="flex items-center min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus-within:ring-2 focus-within:ring-slate-900 dark:focus-within:ring-white focus-within:border-transparent transition-all overflow-hidden"
+          >
+            <DropdownMenu
+              open={openDropdown === 'currency'}
+              onOpenChange={(isOpen) => {
+                if (isOpen) updatePriceBoxWidth();
+                setOpenDropdown(isOpen ? 'currency' : null);
+              }}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 px-2.5 h-10 border-r border-slate-200 dark:border-zinc-800 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-slate-800 dark:text-zinc-200 text-sm font-semibold transition-colors shrink-0 outline-none"
+                  title="Select Currency"
+                >
+                  <span className="min-w-[14px] text-center">{currConfig.symbol}</span>
+                  <ChevronDown size={14} className={`text-slate-500 dark:text-zinc-500 transition-transform duration-200 ${openDropdown === 'currency' ? 'rotate-180' : ''}`} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="start" 
+                alignOffset={-1}
+                sideOffset={4}
+                style={{ width: priceBoxWidth ? `${priceBoxWidth}px` : undefined }} 
+                className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 max-h-[220px] overflow-y-auto"
+              >
+                <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-wider">
+                  Select Currency
+                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  {SUPPORTED_CURRENCIES.map(curr => {
+                    const isSelected = activeCurrencyCode === curr.code;
+                    return (
+                      <DropdownMenuItem
+                        key={curr.code}
+                        onClick={() => {
+                          setFormData((prev: any) => ({ ...prev, currency: curr.code }));
+                          try {
+                            localStorage.setItem('tech_tracker_currency', curr.code);
+                          } catch (e) {}
+                        }}
+                        className="cursor-pointer text-sm font-medium flex items-center justify-between group py-2 px-3"
+                      >
+                        <div className="flex items-center min-w-0 flex-1">
+                          <span className={`w-7 shrink-0 text-center font-bold mr-2 text-xs ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-zinc-400'}`}>
+                            {curr.symbol}
+                          </span>
+                          <span className="text-slate-300 dark:text-zinc-600 mr-2 text-xs">-</span>
+                          <span className={`font-semibold text-sm ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-zinc-400'}`}>
+                            {curr.code}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <Check size={14} className="text-slate-900 dark:text-white shrink-0 ml-2" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <input 
               type="number"
               placeholder="0.00"
               value={formData.price}
               onChange={e => setFormData({...formData, price: e.target.value})}
-              className="flex min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-7 pr-3 py-2 text-sm leading-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white"
+              className="flex-1 min-h-10 px-3 py-2 text-sm leading-normal text-slate-900 dark:text-white bg-transparent outline-none border-none focus:outline-none"
             />
           </div>
         </div>
@@ -174,6 +312,193 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+          Tags / Labels
+        </label>
+        
+        {/* Selected tags chip bar */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-2 min-h-6">
+          {currentTags.length > 0 ? (
+            currentTags.map(tag => {
+              const colorId = tagColors?.[tag.toLowerCase()];
+              const colorDef = getTagColorDef(colorId);
+              const badgeClass = colorDef ? colorDef.badgeClass : DEFAULT_TAG_BADGE_CLASS;
+              const dotColor = colorDef ? colorDef.dotColor : DEFAULT_TAG_DOT_COLOR;
+
+              return (
+                <span
+                  key={tag}
+                  className={`inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-full text-xs font-medium border shadow-2xs transition-all ${badgeClass}`}
+                >
+                  {/* Clickable color dot dropdown to reassign color */}
+                  <DropdownMenu
+                    open={openTagColorDropdown === tag}
+                    onOpenChange={(isOpen) => setOpenTagColorDropdown(isOpen ? tag : null)}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-3 h-3 rounded-full hover:scale-125 transition-transform shrink-0 cursor-pointer ring-1 ring-black/10 dark:ring-white/20"
+                        style={{ backgroundColor: dotColor }}
+                        title={`Change color for #${tag}`}
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="p-2 w-auto min-w-0 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 shadow-xl rounded-xl z-50">
+                      <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5 px-1">
+                        Tag Color
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {PREDEFINED_TAG_COLORS.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              onSetTagColor?.(tag, c.id);
+                              setOpenTagColorDropdown(null);
+                            }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110 cursor-pointer ring-1 ring-black/15 dark:ring-white/20 ${
+                              colorId === c.id ? 'ring-2 ring-offset-2 ring-slate-900 dark:ring-white dark:ring-offset-zinc-900' : ''
+                            }`}
+                            style={{ backgroundColor: c.dotColor }}
+                            title={c.name}
+                          >
+                            {colorId === c.id && (
+                              <Check 
+                                size={12} 
+                                className={c.id === 'platinum' ? 'text-slate-900 drop-shadow-xs' : 'text-white drop-shadow-xs'} 
+                                strokeWidth={3} 
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <span className="font-semibold">{tag}</span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                    title="Remove tag"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-xs text-slate-400 dark:text-zinc-500 italic">No tags added yet</span>
+          )}
+        </div>
+
+        {/* Tag input, color picker, and add button */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 font-mono text-sm pointer-events-none">#</span>
+            <input
+              type="text"
+              placeholder="e.g. work, gifted, loaned"
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              className="flex min-h-10 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-7 pr-3 py-2 text-sm leading-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all"
+            />
+          </div>
+
+          {/* Color selector for new tag */}
+          <DropdownMenu open={isNewTagColorOpen} onOpenChange={setIsNewTagColorOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="h-10 px-2.5 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shrink-0 cursor-pointer"
+                title="Select tag color"
+              >
+                <span 
+                  className="w-3.5 h-3.5 rounded-full shadow-2xs shrink-0 ring-1 ring-black/15 dark:ring-white/20" 
+                  style={{ backgroundColor: getTagColorDef(selectedNewTagColor)?.dotColor || '#2563eb' }} 
+                />
+                <ChevronDown size={13} className="text-slate-400 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="p-2 w-auto min-w-0 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 shadow-xl rounded-xl z-50">
+              <div className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5 px-1">
+                Choose Color
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {PREDEFINED_TAG_COLORS.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedNewTagColor(c.id);
+                      setIsNewTagColorOpen(false);
+                    }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110 cursor-pointer ring-1 ring-black/15 dark:ring-white/20 ${
+                      selectedNewTagColor === c.id ? 'ring-2 ring-offset-2 ring-slate-900 dark:ring-white dark:ring-offset-zinc-900' : ''
+                    }`}
+                    style={{ backgroundColor: c.dotColor }}
+                    title={c.name}
+                  >
+                    {selectedNewTagColor === c.id && (
+                      <Check 
+                        size={12} 
+                        className={c.id === 'platinum' ? 'text-slate-900 drop-shadow-xs' : 'text-white drop-shadow-xs'} 
+                        strokeWidth={3} 
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleAddTag(tagInput)}
+            disabled={!tagInput.trim()}
+            className="h-10 px-3 text-xs font-medium border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 disabled:opacity-40 cursor-pointer shrink-0"
+          >
+            <Plus size={14} className="mr-1" />
+            Add
+          </Button>
+        </div>
+
+        {/* Suggested tags from other products */}
+        {availableTags && availableTags.filter(t => !currentTags.some(ct => ct.toLowerCase() === t.toLowerCase())).length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-medium mr-1">Suggested:</span>
+            {availableTags
+              .filter(t => !currentTags.some(ct => ct.toLowerCase() === t.toLowerCase()))
+              .slice(0, 8)
+              .map(tag => {
+                const colorId = tagColors?.[tag.toLowerCase()];
+                const colorDef = getTagColorDef(colorId);
+                const dotColor = colorDef ? colorDef.dotColor : DEFAULT_TAG_DOT_COLOR;
+
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleAddTag(tag, colorId as TagColorId)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200/80 dark:border-zinc-700/60 transition-colors cursor-pointer"
+                  >
+                    <span 
+                      className="w-1.5 h-1.5 rounded-full shrink-0" 
+                      style={{ backgroundColor: dotColor }} 
+                    />
+                    <Plus size={10} className="text-slate-400" />
+                    <span>{tag}</span>
+                  </button>
+                );
+              })}
+          </div>
+        )}
       </div>
 
       <div>

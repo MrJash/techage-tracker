@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils"
 interface AnimatedThemeTogglerProps extends ComponentPropsWithoutRef<"button"> {
   duration?: number;
   className?: string;
+  onThemeToggle?: (newMode: 'dark' | 'light') => void;
 }
 
 export const AnimatedThemeToggler = ({
   className,
   duration = 400,
+  onThemeToggle,
   ...props
 }: AnimatedThemeTogglerProps) => {
   const [isDark, setIsDark] = useState(false)
@@ -36,14 +38,18 @@ export const AnimatedThemeToggler = ({
   const toggleTheme = useCallback(async () => {
     if (!buttonRef.current) return
 
+    const newTheme = !isDark
+    const themeString = newTheme ? "dark" : "light"
+
     await document.startViewTransition(() => {
       flushSync(() => {
-        const newTheme = !isDark
         setIsDark(newTheme)
         document.documentElement.classList.toggle("dark")
-        localStorage.setItem("tech_tracker_theme", newTheme ? "dark" : "light")
+        localStorage.setItem("tech_tracker_theme", themeString)
       })
     }).ready
+
+    onThemeToggle?.(themeString)
 
     const { top, left, width, height } =
       buttonRef.current.getBoundingClientRect()

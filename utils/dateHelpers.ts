@@ -1,6 +1,12 @@
 import { MONTHS } from '../types';
 
-export const calculateAge = (purchaseMonth: number, purchaseYear: number): string => {
+export type AgeFormat = 'detailed' | 'compact' | 'short' | 'total-months';
+
+export const calculateAge = (
+  purchaseMonth: number, 
+  purchaseYear: number, 
+  format: AgeFormat = 'detailed'
+): string => {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-11
@@ -10,11 +16,31 @@ export const calculateAge = (purchaseMonth: number, purchaseYear: number): strin
   // If calculating for future dates, just return 0
   if (totalMonths < 0) totalMonths = 0;
 
+  if (totalMonths === 0) return "Brand New";
+
+  if (format === 'total-months') {
+    return `${totalMonths} mo${totalMonths !== 1 ? 's' : ''}`;
+  }
+
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
 
-  if (years === 0 && months === 0) return "Brand New";
+  if (format === 'short') {
+    const yearPart = years > 0 ? `${years}y` : '';
+    const monthPart = months > 0 ? `${months}m` : '';
+    if (years > 0 && months > 0) return `${yearPart} ${monthPart}`;
+    if (years > 0) return yearPart;
+    return monthPart;
+  }
 
+  if (format === 'compact') {
+    const decimalYears = (totalMonths / 12).toFixed(1);
+    return decimalYears.endsWith('.0') 
+      ? `${Math.floor(totalMonths / 12)} yrs` 
+      : `${decimalYears} yrs`;
+  }
+
+  // Default: detailed
   const yearString = years > 0 ? `${years} Year${years > 1 ? 's' : ''}` : '';
   const monthString = months > 0 ? `${months} Month${months > 1 ? 's' : ''}` : '';
 

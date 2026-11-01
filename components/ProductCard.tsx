@@ -1,7 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { Product } from '../types';
-import { calculateAge, getMonthName, calculateWarrantyStatus, getWarrantyExpirationDate } from '../utils/dateHelpers';
-import { Calendar, Trash2, Pencil, IndianRupee, ShieldCheck, ShieldAlert, ShieldX, FileText, Eye, Download, X, GripHorizontal, FolderInput, Check, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { calculateAge, getMonthName, calculateWarrantyStatus, getWarrantyExpirationDate, AgeFormat } from '../utils/dateHelpers';
+import { Calendar, Trash2, Pencil, ShieldCheck, ShieldAlert, ShieldX, FileText, Eye, Download, X, GripHorizontal, FolderInput, Check, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { CurrencyCode, formatPrice } from '../utils/currency';
+import { getTagColorDef, DEFAULT_TAG_BADGE_CLASS } from '../utils/tagColors';
 import Hamburger from 'hamburger-react';
 import { getCollectionIcon } from './Sidebar';
 import {
@@ -34,12 +36,17 @@ interface ProductCardProps {
   isSelected?: boolean;
   onToggleSelect?: (productId: string) => void;
   onLongPress?: (productId: string) => void;
+  currency?: CurrencyCode;
+  isHighlighted?: boolean;
+  tagColors?: Record<string, string>;
+  ageFormat?: AgeFormat;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ 
   product, onDelete, onEdit, onDeleteReceipt, onMove, availableCollections, 
   onDragStart, onDragOver, onDragEnter, onDrop, onDragEnd, isDraggedOver, 
-  isSelectMode, isSelected, onToggleSelect, onLongPress 
+  isSelectMode, isSelected, onToggleSelect, onLongPress, currency, isHighlighted,
+  tagColors, ageFormat
 }) => {
   const getConditionIcon = (condition: string) => {
     switch (condition) {
@@ -57,7 +64,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const age = calculateAge(product.purchaseMonth, product.purchaseYear);
+  const age = calculateAge(product.purchaseMonth, product.purchaseYear, ageFormat);
   const purchaseDate = `${getMonthName(product.purchaseMonth)} ${product.purchaseYear}`;
   const warrantyStatus = calculateWarrantyStatus(product.purchaseMonth, product.purchaseYear, product.warrantyYears);
   const expiryDate = getWarrantyExpirationDate(product.purchaseMonth, product.purchaseYear, product.warrantyYears);
@@ -135,7 +142,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             ? 'border-slate-900 dark:border-white scale-[1.02] shadow-lg' 
             : isSelected
               ? 'border-slate-800 dark:border-slate-200 ring-1 ring-slate-800 dark:ring-slate-200 bg-slate-50/50 dark:bg-zinc-800/20'
-              : 'border-slate-200 dark:border-zinc-800 dark:hover:border-zinc-700'
+              : isHighlighted
+                ? 'border-blue-500 ring-2 ring-blue-500/80 ring-offset-2 dark:ring-offset-zinc-950 shadow-lg shadow-blue-500/10 transition-all duration-300'
+                : 'border-slate-200 dark:border-zinc-800 dark:hover:border-zinc-700'
       }`}
       draggable={!isSelectMode && isDragEnabled}
       onDragStart={handleDragStartInternal}
@@ -167,7 +176,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         >
           <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <div className={`transition-opacity ${isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-md cursor-pointer`}>
+              <div className={`transition-opacity p-1 ${isMenuOpen ? 'opacity-100' : 'opacity-100 xl:opacity-0 xl:group-hover:opacity-100'} text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-md cursor-pointer`}>
                 <Hamburger toggled={isMenuOpen} toggle={setIsMenuOpen} size={20} />
               </div>
             </DropdownMenuTrigger>
@@ -236,7 +245,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 
       <div>
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300">
             {React.createElement(getCollectionIcon(product.category), { size: 12, className: 'mr-1.5 flex-shrink-0' })}
             {product.category}
@@ -256,6 +265,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {product.condition}
             </div>
           )}
+
+          {product.tags && product.tags.length > 0 && product.tags.map((tag) => {
+            const colorDef = getTagColorDef(tagColors?.[tag.toLowerCase()]);
+            const badgeClass = colorDef ? colorDef.badgeClass : DEFAULT_TAG_BADGE_CLASS;
+            return (
+              <div 
+                key={tag}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border shadow-2xs transition-all ${badgeClass}`}
+              >
+                <span className="opacity-70 mr-0.5">#</span>
+                <span>{tag}</span>
+              </div>
+            );
+          })}
         </div>
         
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 leading-tight">
@@ -270,9 +293,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
 
             {product.price !== undefined && (
-              <div className="flex items-center text-sm text-slate-500 dark:text-zinc-400">
-                <IndianRupee size={12} className="mr-1 shrink-0" />
-                {product.price.toLocaleString('en-IN')}
+              <div className="flex items-center text-sm font-semibold text-slate-600 dark:text-zinc-300">
+                {formatPrice(product.price, (product.currency as CurrencyCode) || currency || 'USD')}
               </div>
             )}
           </div>
@@ -363,7 +385,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <p className="text-xs font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1">
             Current Age
           </p>
-          <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 dark:text-zinc-100 tracking-tight truncate whitespace-nowrap">
+          <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-zinc-100 tracking-tight leading-snug">
             {age}
           </p>
         </div>

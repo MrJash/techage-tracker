@@ -1,4 +1,5 @@
 import { Collection, Product, MONTHS } from '../types';
+import { CurrencyCode, formatPrice as formatCurrencyPrice } from './currency';
 
 export interface ProductFieldChange {
   field: string;
@@ -32,9 +33,9 @@ export interface ImportDiffResult {
   collections: CollectionDiffItem[];
 }
 
-function formatPrice(val?: number): string {
+function formatPrice(val?: number, currencyCode: CurrencyCode = 'INR'): string {
   if (val === undefined || val === null || isNaN(val)) return 'None';
-  return `₹${val.toLocaleString('en-IN')}`;
+  return formatCurrencyPrice(val, currencyCode);
 }
 
 function formatDate(month: number, year: number): string {
@@ -49,7 +50,8 @@ function formatWarranty(val?: number): string {
 
 export function compareCollections(
   cloudCollections: Collection[],
-  importedCollections: Collection[]
+  importedCollections: Collection[],
+  currencyCode: CurrencyCode = 'USD'
 ): ImportDiffResult {
   const cloudCols = cloudCollections || [];
   const importedCols = importedCollections || [];
@@ -133,8 +135,8 @@ export function compareCollections(
       if (impPrice !== cloudPrice) {
         changes.push({
           field: 'Price',
-          oldValue: formatPrice(cloudPrice),
-          newValue: formatPrice(impPrice),
+          oldValue: formatPrice(cloudPrice, currencyCode),
+          newValue: formatPrice(impPrice, currencyCode),
         });
       }
 
@@ -163,6 +165,16 @@ export function compareCollections(
           field: 'Warranty',
           oldValue: formatWarranty(cloudWarranty),
           newValue: formatWarranty(impWarranty),
+        });
+      }
+
+      const impTags = (impProd.tags || []).join(', ');
+      const cloudTags = (cloudProd.tags || []).join(', ');
+      if (impTags !== cloudTags) {
+        changes.push({
+          field: 'Tags',
+          oldValue: cloudTags || 'None',
+          newValue: impTags || 'None',
         });
       }
 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Collection } from '../types';
+import { Collection, MONTHS } from '../types';
+import { calculateWarrantyStatus } from '../utils/dateHelpers';
 
 export function useImportExport(
     collections: Collection[],
@@ -19,6 +20,74 @@ export function useImportExport(
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleExportCSV = () => {
+        const escapeCsvCell = (val: any): string => {
+            if (val === null || val === undefined) return '';
+            const str = String(val);
+            if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+
+        const headers = [
+            'Collection',
+            'Product Name',
+            'Category',
+            'Price',
+            'Currency',
+            'Purchase Month',
+            'Purchase Year',
+            'Purchase Date',
+            'Warranty (Years)',
+            'Warranty Status',
+            'Condition',
+            'Tags',
+            'Has Receipt'
+        ];
+
+        const rows: string[][] = [headers];
+
+        collections.forEach(col => {
+            (col.products || []).forEach(p => {
+                const monthName = MONTHS[p.purchaseMonth] || '';
+                const purchaseDate = `${monthName} ${p.purchaseYear}`.trim();
+                const warrantyStatus = calculateWarrantyStatus(p.purchaseMonth, p.purchaseYear, p.warrantyYears);
+                const tagsStr = (p.tags || []).join('; ');
+                const hasReceipt = p.receipt ? 'Yes' : 'No';
+
+                rows.push([
+                    col.name,
+                    p.name,
+                    p.category,
+                    p.price !== undefined && p.price !== null ? String(p.price) : '',
+                    p.currency || 'USD',
+                    monthName,
+                    String(p.purchaseYear),
+                    purchaseDate,
+                    p.warrantyYears !== undefined && p.warrantyYears !== null ? String(p.warrantyYears) : '',
+                    warrantyStatus || '',
+                    p.condition || '',
+                    tagsStr,
+                    hasReceipt
+                ]);
+            });
+        });
+
+        // Add UTF-8 BOM so Excel opens non-ASCII characters correctly
+        const csvContent = '\uFEFF' + rows.map(r => r.map(escapeCsvCell).join(',')).join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tech-tracker-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +134,7 @@ export function useImportExport(
 
     return {
         handleExportData,
+        handleExportCSV,
         handleImportData
     };
 }

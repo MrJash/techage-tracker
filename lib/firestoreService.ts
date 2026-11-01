@@ -9,6 +9,43 @@ export function clearReceiptSyncCache(): void {
   syncedReceiptsCache.clear();
 }
 
+export interface UserPreferences {
+  defaultCurrency?: string;
+  ageFormat?: 'detailed' | 'compact' | 'short' | 'total-months';
+  defaultWarranty?: number;
+  defaultOpeningCollection?: string;
+  themeMode?: 'system' | 'dark' | 'light';
+  tagColors?: Record<string, string>;
+}
+
+/**
+ * Loads user preferences (e.g. default currency) from Firestore.
+ */
+export async function loadUserPreferencesFromFirestore(userId: string): Promise<UserPreferences | null> {
+  try {
+    const docRef = doc(db, 'users', userId);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    return (data.preferences as UserPreferences) || (data.defaultCurrency ? { defaultCurrency: data.defaultCurrency } : null);
+  } catch (err) {
+    console.warn('Failed to load user preferences from Firestore:', err);
+    return null;
+  }
+}
+
+/**
+ * Saves user preferences to Firestore.
+ */
+export async function saveUserPreferencesToFirestore(userId: string, preferences: UserPreferences): Promise<void> {
+  try {
+    const docRef = doc(db, 'users', userId);
+    await setDoc(docRef, { preferences, lastSyncedAt: Date.now() }, { merge: true });
+  } catch (err) {
+    console.warn('Failed to save user preferences to Firestore:', err);
+  }
+}
+
 /**
  * Loads collections and attaches receipts from the user's receipts subcollection.
  * Subcollection path: users/{userId}/receipts/{productId}
@@ -78,7 +115,11 @@ export async function deleteReceiptFromFirestore(userId: string, productId: stri
  * - Only new or changed receipts are uploaded (using syncedReceiptsCache).
  * - Deleted receipts are pruned.
  */
-export async function saveCollectionsToFirestore(userId: string, collections: Collection[]): Promise<void> {
+export async function saveCollectionsToFirestore(
+  userId: string, 
+  collections: Collection[],
+  preferences?: UserPreferences
+): Promise<void> {
   // 1. Sanitize collections metadata for users/{userId} doc
   // Base64 receipts are stripped from the primary document to stay well under 1MB limit.
   const cleanCollections = collections.map(col => {
@@ -97,11 +138,17 @@ export async function saveCollectionsToFirestore(userId: string, collections: Co
         if (p.price !== undefined && p.price !== null && !isNaN(p.price)) {
           cleanProduct.price = p.price;
         }
+        if (p.currency) {
+          cleanProduct.currency = p.currency;
+        }
         if (p.warrantyYears !== undefined && p.warrantyYears !== null && !isNaN(p.warrantyYears)) {
           cleanProduct.warrantyYears = p.warrantyYears;
         }
         if (p.condition) {
           cleanProduct.condition = p.condition;
+        }
+        if (Array.isArray(p.tags) && p.tags.length > 0) {
+          cleanProduct.tags = p.tags;
         }
         // Retain external URL receipts (if any non-base64 receipts are ever used)
         if (p.receipt && !p.receipt.startsWith('data:')) {
@@ -117,7 +164,11 @@ export async function saveCollectionsToFirestore(userId: string, collections: Co
 
   // 2. Save primary document
   const docRef = doc(db, 'users', userId);
-  await setDoc(docRef, { collections: cleanCollections, lastSyncedAt: Date.now() }, { merge: true });
+  const primaryDocData: any = { collections: cleanCollections, lastSyncedAt: Date.now() };
+  if (preferences) {
+    primaryDocData.preferences = preferences;
+  }
+  await setDoc(docRef, primaryDocData, { merge: true });
 
   // 3. Sync subcollection users/{userId}/receipts/{productId}
   const currentProductsWithReceipt = new Map<string, string>();

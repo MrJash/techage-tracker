@@ -74,9 +74,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /receipts/{productId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }
 ```
+*(For hardened production rules with schema and payload validation, copy the full [`firestore.rules`](./firestore.rules) file).*
 
 4. Register a web app and copy the config values into `.env.local`

@@ -5,9 +5,11 @@ export interface Product {
   purchaseMonth: number; // 0-11 (Jan-Dec)
   purchaseYear: number;
   price?: number;
+  currency?: string;
   warrantyYears?: number;
   receipt?: string;
   condition?: string;
+  tags?: string[];
   createdAt: number;
 }
 
