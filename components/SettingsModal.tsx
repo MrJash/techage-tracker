@@ -869,9 +869,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="space-y-4 divide-y divide-slate-200/60 dark:divide-zinc-800/60 text-xs">
+                  <div className="text-xs">
                     {/* v1.4.0 */}
-                    <div className="space-y-2 pt-1 first:pt-0">
+                    <div className="pb-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.4.0</span>
@@ -891,7 +891,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     {/* v1.3.0 */}
-                    <div className="space-y-2 pt-3">
+                    <div className="py-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.3.0</span>
@@ -908,7 +908,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     {/* v1.2.0 */}
-                    <div className="space-y-2 pt-3">
+                    <div className="pt-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.2.0</span>
