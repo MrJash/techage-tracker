@@ -5,10 +5,15 @@ import {
   Globe, 
   FileSpreadsheet, 
   Heart, 
-  GitCommit 
+  GitCommit,
+  Compass
 } from 'lucide-react';
 
-export const AboutTab: React.FC = () => {
+interface AboutTabProps {
+  onStartTour?: () => void;
+}
+
+export const AboutTab: React.FC<AboutTabProps> = ({ onStartTour }) => {
   return (
     <div className="space-y-5 animate-in fade-in duration-200 py-1">
       {/* Hero Branding Section (No card) */}
@@ -28,7 +33,7 @@ export const AboutTab: React.FC = () => {
                 TechAge Tracker
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 font-mono">
-                v1.4.0
+                v1.5.0
               </span>
             </div>
             <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400 mt-0.5">
@@ -67,7 +72,7 @@ export const AboutTab: React.FC = () => {
       <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/30 text-xs text-slate-500 dark:text-zinc-400 space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/60">
           <span className="font-medium">Version</span>
-          <span className="font-semibold text-slate-900 dark:text-white font-mono">1.4.0</span>
+          <span className="font-semibold text-slate-900 dark:text-white font-mono">1.5.0</span>
         </div>
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/60">
           <span className="font-medium">Author & Creator</span>
@@ -76,9 +81,25 @@ export const AboutTab: React.FC = () => {
             <Heart size={12} className="text-red-500 fill-red-500 shrink-0" />
           </span>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/60">
           <span className="font-medium">Cloud Database</span>
           <span className="font-semibold text-slate-900 dark:text-white">Cloud Firestore (rules_version 2)</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Guided Tour</span>
+          {onStartTour ? (
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:border-slate-300 dark:hover:border-zinc-600 transition-colors font-semibold cursor-pointer text-[11px]"
+            >
+              <Compass size={13} className="text-primary shrink-0" />
+              <span>Launch Tour</span>
+              <kbd className="text-[10px] font-mono opacity-60">Alt+T</kbd>
+            </button>
+          ) : (
+            <span className="font-mono text-slate-400">Alt+T</span>
+          )}
         </div>
       </div>
 
@@ -95,23 +116,40 @@ export const AboutTab: React.FC = () => {
         </div>
 
         <div className="text-xs">
-          {/* v1.4.0 */}
+          {/* v1.5.0 */}
           <div className="pb-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.4.0</span>
+                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.5.0</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
                   Latest
                 </span>
               </div>
             </div>
             <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-emerald-500">
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Structured</strong> General settings into 2 big cards with nested sections for storage, data portability, and cloud management.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Enlarged</strong> Settings modal popup dimensions (<code className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-1 py-0.5 rounded">max-w-4xl</code>) for improved visibility on desktop screens.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> new 'Short' age display format (<code className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-1 py-0.5 rounded">3y 4m</code>).</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> 2 new color themes: Sage Garden and Amber Minimal.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> various theme-related bugs and visual contrast issues.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Updated</strong> Import button workflow and added animated toast notifications for exports, product additions, and saves.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Unified</strong> UI components consistency across buttons, dialogs, and selection controls.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> support for Progressive Web App (PWA) with installability, offline icons, and mobile optimization.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> bugs in Settings and improved overall performance.</li>
+            </ul>
+          </div>
+
+          {/* v1.4.0 */}
+          <div className="py-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.4.0</span>
+              </div>
+            </div>
+            <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Structured</strong> General settings into 2 clean cards for storage, data portability, and cloud management.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Enlarged</strong> Settings modal dimensions for improved visibility on desktop screens.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> new 'Short' age display format (e.g. 3y 4m).</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> real-time synchronization between the header theme toggle and General settings state.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> collection launch persistence on browser refresh to strictly honor user preferences.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Refined</strong> CSV/JSON export buttons with symmetric hover effects and pixel-perfect badge alignment.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> collection launch persistence on browser refresh to honor user preferences.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Refined</strong> CSV and JSON export buttons with cleaner hover effects.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> author attribution and in-app release changelog.</li>
             </ul>
           </div>
@@ -126,10 +164,10 @@ export const AboutTab: React.FC = () => {
             <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> curated 8-color palette for product tags with responsive colored filter dots.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> Theme Mode selector supporting System (Auto), Dark, and Light mode presets.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> Storage & Receipt Footprint meter with 5 MB localStorage quota tracker.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> Storage and Receipt footprint tracker with storage quota meter.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> Cloud Resync troubleshooting utility and guarded Danger Zone workspace reset.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> Default Warranty Duration and Default Opening Collection preferences.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Updated</strong> Firestore security rules v2 to authorize preference synchronization.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Enhanced</strong> Cloud sync security and preference backups.</li>
             </ul>
           </div>
 
@@ -143,8 +181,8 @@ export const AboutTab: React.FC = () => {
             <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> dedicated multi-tab Settings Modal (Preferences, General, About).</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> multi-currency engine supporting 9 global currencies with real-time formatting.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> inline morphing export action bar for quick CSV and JSON downloads.</li>
-              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Architected</strong> dedicated cloud receipts subcollection with 750 KB item ceiling.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Implemented</strong> quick-action bar for CSV and JSON downloads.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> dedicated cloud storage for receipts with size optimization.</li>
             </ul>
           </div>
         </div>

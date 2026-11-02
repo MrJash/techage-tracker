@@ -57,24 +57,24 @@ export const Select: React.FC<SelectProps> = ({
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         {iconOnly ? (
-          <Button variant="outline" size="icon" className={`h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-900 dark:text-white ${className}`}>
+          <Button variant="outline" size="icon" className={`h-10 w-10 border border-input bg-popover hover:bg-accent hover:text-accent-foreground text-foreground rounded-[var(--radius)] ${className}`}>
             {Icon && <Icon size={20} className="shrink-0" />}
           </Button>
         ) : (
-          <Button variant="outline" className={`flex h-10 w-full items-center justify-between rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-normal ring-offset-white dark:ring-offset-black transition-all duration-200 hover:bg-slate-50 dark:hover:bg-zinc-800 ${className}`}>
+          <Button variant="outline" className={`flex h-10 w-full items-center justify-between rounded-[var(--radius)] border border-input bg-popover px-3 py-2 text-sm font-normal ring-offset-background transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-foreground ${className}`}>
             <div className="flex items-center min-w-0 flex-1">
-              {Icon && <Icon size={16} className={`mr-2 shrink-0 ${!selectedOption ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`} />}
-              {!Icon && selectedOption?.icon && <selectedOption.icon size={16} className="mr-2 shrink-0 text-slate-900 dark:text-white" />}
-              <span className={`block truncate ${!selectedOption ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`}>
+              {Icon && <Icon size={16} className={`mr-2 shrink-0 ${!selectedOption ? "text-muted-foreground" : "text-foreground"}`} />}
+              {!Icon && selectedOption?.icon && <selectedOption.icon size={16} className="mr-2 shrink-0 text-foreground" />}
+              <span className={`block truncate ${!selectedOption ? "text-muted-foreground" : "text-foreground"}`}>
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
             </div>
-            <ChevronDown size={16} className={`ml-2 text-slate-500 dark:text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`ml-2 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
           </Button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }} className={`bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 max-h-[210px] overflow-y-auto ${iconOnly ? 'w-48' : ''}`}>
-        <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-500 uppercase tracking-wider">
+      <DropdownMenuContent align="start" style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }} className={`bg-popover text-popover-foreground border border-border rounded-[var(--radius)] shadow-md max-h-[210px] overflow-y-auto ${iconOnly ? 'w-48' : ''}`}>
+        <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {placeholder}
         </DropdownMenuLabel>
         <DropdownMenuGroup>
@@ -84,18 +84,18 @@ export const Select: React.FC<SelectProps> = ({
               <DropdownMenuItem
                 key={option.value}
                 onClick={() => onChange(option.value)}
-                className="cursor-pointer text-sm font-medium flex items-center justify-between group py-2 px-3"
+                className="cursor-pointer text-sm font-medium flex items-center justify-between group py-2 px-3 focus:bg-accent focus:text-accent-foreground"
               >
                 <div className="flex items-center min-w-0">
                   {OptionIcon && (
-                    <OptionIcon size={14} className={`mr-2 shrink-0 ${option.value === value ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-zinc-400'}`} />
+                    <OptionIcon size={14} className={`mr-2 shrink-0 ${option.value === value ? 'text-primary' : 'text-muted-foreground'}`} />
                   )}
-                  <span className={`truncate ${option.value === value ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-zinc-400'}`}>
+                  <span className={`truncate ${option.value === value ? 'text-foreground font-semibold' : 'text-popover-foreground'}`}>
                     {option.label}
                   </span>
                 </div>
                 {option.value === value && (
-                  <Check size={14} className="text-slate-900 dark:text-white shrink-0 ml-2" />
+                  <Check size={14} className="text-primary shrink-0 ml-2" />
                 )}
               </DropdownMenuItem>
             );

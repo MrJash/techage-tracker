@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   X, 
   Sliders, 
@@ -21,10 +22,10 @@ import {
 } from './AlertDialog';
 
 import { PreferencesTab } from './settings/PreferencesTab';
-import { GeneralTab, ThemeMode } from './settings/GeneralTab';
+import { GeneralTab, ThemeMode, ThemePreset } from './settings/GeneralTab';
 import { AboutTab } from './settings/AboutTab';
 
-export type { ThemeMode };
+export type { ThemeMode, ThemePreset };
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -42,9 +43,11 @@ interface SettingsModalProps {
   collections?: Collection[];
   defaultOpeningCollection?: string;
   onDefaultOpeningCollectionChange?: (colId: string) => void;
-  // Theme Mode
+  // Theme Mode & Preset
   themeMode?: ThemeMode;
   onThemeModeChange?: (mode: ThemeMode) => void;
+  themePreset?: ThemePreset;
+  onThemePresetChange?: (preset: ThemePreset) => void;
   // Storage Footprint
   totalReceiptsCount?: number;
   totalReceiptsBytes?: number;
@@ -65,9 +68,23 @@ interface SettingsModalProps {
   onSignIn?: () => void;
   // Danger Zone
   onResetAllData?: () => void;
+  // Guided Tour
+  onStartTour?: () => void;
 }
 
 type TabType = 'preferences' | 'general' | 'about';
+
+interface TabItem {
+  id: TabType;
+  label: string;
+  icon: React.FC<{ size?: number; className?: string }>;
+}
+
+const SETTINGS_TABS: TabItem[] = [
+  { id: 'preferences', label: 'Preferences', icon: Sliders },
+  { id: 'general', label: 'General', icon: Settings },
+  { id: 'about', label: 'About', icon: Info },
+];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -83,6 +100,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onDefaultOpeningCollectionChange,
   themeMode = 'system',
   onThemeModeChange,
+  themePreset = 'default',
+  onThemePresetChange,
   totalReceiptsCount = 0,
   totalReceiptsBytes = 0,
   user,
@@ -95,9 +114,59 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSignOut,
   onSignIn,
   onResetAllData,
+  onStartTour,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('preferences');
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const navRef = useRef<HTMLElement | null>(null);
+  const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const updateUnderline = () => {
+      const activeIndex = SETTINGS_TABS.findIndex(tab => tab.id === activeTab);
+      const activeTabElement = tabRefs.current[activeIndex];
+
+      if (activeTabElement) {
+        setUnderlineStyle({
+          left: activeTabElement.offsetLeft,
+          width: activeTabElement.offsetWidth,
+        });
+      }
+    };
+
+    updateUnderline();
+    const rafId = requestAnimationFrame(updateUnderline);
+
+    // Re-measure after web fonts finish loading (e.g. Antic in Sage theme)
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(updateUnderline).catch(() => {});
+    }
+
+    // ResizeObserver dynamically measures tab size changes (theme font swap, reflows)
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        updateUnderline();
+      });
+
+      if (navRef.current) {
+        resizeObserver.observe(navRef.current);
+      }
+      tabRefs.current.forEach(el => {
+        if (el) resizeObserver?.observe(el);
+      });
+    }
+
+    window.addEventListener('resize', updateUnderline);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateUnderline);
+      resizeObserver?.disconnect();
+    };
+  }, [activeTab, isOpen, themePreset, themeMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,6 +187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         onClick={onClose}
       >
         <div 
+          data-tour="settings-modal"
           className="relative bg-white dark:bg-zinc-950 w-full h-full sm:h-[760px] sm:max-h-[92vh] sm:max-w-4xl sm:rounded-2xl border-0 sm:border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
           onClick={e => e.stopPropagation()}
         >
@@ -138,53 +208,51 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 -mr-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="p-2 -mr-1.5 rounded-[var(--radius)] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                 title="Close (Esc)"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Horizontal Tabs: Preferences, General, About */}
-            <nav className="flex items-center gap-1 sm:gap-2 -mb-px overflow-x-auto no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setActiveTab('preferences')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer shrink-0 ${
-                  activeTab === 'preferences'
-                    ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-                }`}
-              >
-                <Sliders size={14} className="shrink-0" />
-                <span>Preferences</span>
-              </button>
+            {/* Horizontal Tabs: Preferences, General, About with Animated Motion Underline */}
+            <nav ref={navRef} className="relative flex items-center gap-1 sm:gap-2 -mb-px overflow-x-auto no-scrollbar">
+              {SETTINGS_TABS.map((tab, index) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    ref={el => {
+                      tabRefs.current[index] = el;
+                    }}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative z-10 flex items-center gap-2 px-3.5 py-2.5 text-xs transition-colors cursor-pointer shrink-0 rounded-t-lg ${
+                      isActive
+                        ? 'text-primary font-bold'
+                        : 'font-medium text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Icon size={14} className="shrink-0" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('general')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer shrink-0 ${
-                  activeTab === 'general'
-                    ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-                }`}
-              >
-                <Settings size={14} className="shrink-0" />
-                <span>General</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('about')}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer shrink-0 ${
-                  activeTab === 'about'
-                    ? 'border-slate-900 dark:border-white text-slate-900 dark:text-white'
-                    : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-                }`}
-              >
-                <Info size={14} className="shrink-0" />
-                <span>About</span>
-              </button>
+              {/* Theme-aware smooth animated underline indicator */}
+              <motion.div
+                className="bg-primary absolute bottom-0 h-0.5 rounded-full z-20 pointer-events-none"
+                animate={{
+                  left: underlineStyle.left,
+                  width: underlineStyle.width,
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 35,
+                }}
+              />
             </nav>
           </div>
 
@@ -208,6 +276,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <GeneralTab
                 themeMode={themeMode}
                 onThemeModeChange={onThemeModeChange}
+                themePreset={themePreset}
+                onThemePresetChange={onThemePresetChange}
                 totalCollectionsCount={totalCollectionsCount}
                 totalProductsCount={totalProductsCount}
                 totalReceiptsCount={totalReceiptsCount}
@@ -223,7 +293,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             )}
 
-            {activeTab === 'about' && <AboutTab />}
+            {activeTab === 'about' && (
+              <AboutTab 
+                onStartTour={onStartTour ? () => {
+                  onClose();
+                  onStartTour();
+                } : undefined} 
+              />
+            )}
           </div>
 
           {/* Bottom Footer */}
@@ -256,7 +333,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               ) : (
                 <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">
-                  TechAge Tracker v1.4.0
+                  TechAge Tracker v1.5.0
                 </span>
               )}
             </div>
@@ -264,7 +341,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-semibold hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
+              className="px-5 py-2 rounded-[var(--radius)] bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-sm cursor-pointer"
             >
               Done
             </button>

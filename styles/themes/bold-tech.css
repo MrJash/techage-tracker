@@ -1,0 +1,149 @@
+/* ========================================================================== */
+/* Theme 2: Bold Tech (Cyber Violet & Deep Indigo)                            */
+/* ========================================================================== */
+[data-theme="bold-tech"] {
+    --background: #ffffff;
+    --foreground: #312e81;
+    --card: #ffffff;
+    --card-foreground: #312e81;
+    --popover: #ffffff;
+    --popover-foreground: #312e81;
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
+    --secondary: #f3f0ff;
+    --secondary-foreground: #4338ca;
+    --muted: #f5f3ff;
+    --muted-foreground: #7c3aed;
+    --accent: #dbeafe;
+    --accent-foreground: #1e40af;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e0e7ff;
+    --input: #e0e7ff;
+    --ring: #8b5cf6;
+    --chart-1: #8b5cf6;
+    --chart-2: #7c3aed;
+    --chart-3: #6d28d9;
+    --chart-4: #5b21b6;
+    --chart-5: #4c1d95;
+    --sidebar: #f5f3ff;
+    --sidebar-foreground: #312e81;
+    --sidebar-primary: #8b5cf6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #dbeafe;
+    --sidebar-accent-foreground: #1e40af;
+    --sidebar-border: #e0e7ff;
+    --sidebar-ring: #8b5cf6;
+    --font-sans: Roboto, sans-serif;
+    --font-serif: Playfair Display, serif;
+    --font-mono: Fira Code, monospace;
+    --radius: 0.625rem;
+    --shadow-color: hsl(255 86% 66%);
+    --shadow-2xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+    --shadow-xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+    --shadow-sm: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+    --shadow: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+    --shadow-md: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 2px 4px -1px hsl(255 86% 66% / 0.20);
+    --shadow-lg: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 4px 6px -1px hsl(255 86% 66% / 0.20);
+    --shadow-xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 8px 10px -1px hsl(255 86% 66% / 0.20);
+    --shadow-2xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.50);
+
+    /* Dynamic Tailwind Light Overrides for Bold Tech */
+    --color-slate-950: #1e1b4b;
+    --color-slate-900: #312e81;
+    --color-slate-800: #3730a3;
+    --color-slate-700: #4338ca;
+    --color-slate-600: #4f46e5;
+    --color-slate-500: #7c3aed;
+    --color-slate-400: #a5b4fc;
+    --color-slate-300: #c7d2fe;
+    --color-slate-200: #e0e7ff;
+    --color-slate-100: #f3f0ff;
+    --color-slate-50: #f5f3ff;
+
+    --color-zinc-950: #1e1b4b;
+    --color-zinc-900: #312e81;
+    --color-zinc-800: #3730a3;
+    --color-zinc-700: #4338ca;
+    --color-zinc-600: #4f46e5;
+    --color-zinc-500: #7c3aed;
+    --color-zinc-400: #a5b4fc;
+    --color-zinc-300: #c7d2fe;
+    --color-zinc-200: #e0e7ff;
+    --color-zinc-100: #f3f0ff;
+    --color-zinc-50: #f5f3ff;
+}
+
+.dark[data-theme="bold-tech"],
+[data-theme="bold-tech"].dark,
+html.dark[data-theme="bold-tech"] {
+    --background: #0f172a;
+    --foreground: #e0e7ff;
+    --card: #1e1b4b;
+    --card-foreground: #e0e7ff;
+    --popover: #1e1b4b;
+    --popover-foreground: #e0e7ff;
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
+    --secondary: #1e1b4b;
+    --secondary-foreground: #e0e7ff;
+    --muted: #171447;
+    --muted-foreground: #c4b5fd;
+    --accent: #4338ca;
+    --accent-foreground: #e0e7ff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #2e1065;
+    --input: #4338ca;
+    --ring: #8b5cf6;
+    --chart-1: #a78bfa;
+    --chart-2: #8b5cf6;
+    --chart-3: #7c3aed;
+    --chart-4: #6d28d9;
+    --chart-5: #5b21b6;
+    --sidebar: #0f172a;
+    --sidebar-foreground: #e0e7ff;
+    --sidebar-primary: #8b5cf6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #4338ca;
+    --sidebar-accent-foreground: #e0e7ff;
+    --sidebar-border: #2e1065;
+    --sidebar-ring: #8b5cf6;
+    --font-sans: Roboto, sans-serif;
+    --font-serif: Playfair Display, serif;
+    --font-mono: Fira Code, monospace;
+    --radius: 0.625rem;
+    --shadow-color: hsl(255 86% 66%);
+    --shadow-2xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+    --shadow-xs: 2px 2px 4px 0px hsl(255 86% 66% / 0.10);
+    --shadow-sm: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+    --shadow: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 1px 2px -1px hsl(255 86% 66% / 0.20);
+    --shadow-md: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 2px 4px -1px hsl(255 86% 66% / 0.20);
+    --shadow-lg: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 4px 6px -1px hsl(255 86% 66% / 0.20);
+    --shadow-xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.20), 2px 8px 10px -1px hsl(255 86% 66% / 0.20);
+    --shadow-2xl: 2px 2px 4px 0px hsl(255 86% 66% / 0.50);
+
+    /* Dynamic Tailwind Dark Overrides for Bold Tech */
+    --color-black: #0f172a;
+    --color-zinc-950: #0f172a;
+    --color-zinc-900: #1e1b4b;
+    --color-zinc-800: #2e1065;
+    --color-zinc-700: #4338ca;
+    --color-zinc-600: #6d28d9;
+    --color-zinc-500: #8b5cf6;
+    --color-zinc-400: #c4b5fd;
+    --color-zinc-300: #ddd6fe;
+    --color-zinc-200: #e0e7ff;
+    --color-zinc-100: #e0e7ff;
+
+    --color-slate-950: #0f172a;
+    --color-slate-900: #1e1b4b;
+    --color-slate-800: #2e1065;
+    --color-slate-700: #4338ca;
+    --color-slate-600: #6d28d9;
+    --color-slate-500: #8b5cf6;
+    --color-slate-400: #c4b5fd;
+    --color-slate-300: #ddd6fe;
+    --color-slate-200: #e0e7ff;
+    --color-slate-100: #e0e7ff;
+}

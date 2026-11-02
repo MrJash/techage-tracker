@@ -8,22 +8,63 @@ export function useImportExport(
     setFilterCategories: React.Dispatch<React.SetStateAction<string[]>>,
     setActiveCollectionId: React.Dispatch<React.SetStateAction<string>>,
     setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>,
-    onProcessImport?: (importedCollections: Collection[]) => void
+    onProcessImport?: (importedCollections: Collection[]) => void,
+    defaultCurrency?: string
 ) {
-    const handleExportData = () => {
-        const dataStr = JSON.stringify(collections, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `tech-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    const saveFileWithPicker = async (
+        blob: Blob, 
+        suggestedName: string, 
+        description: string, 
+        accept: Record<string, string[]>
+    ): Promise<boolean> => {
+        // 1. Try modern File System Access API (supported in Chromium, Chrome, Edge, etc.)
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await (window as any).showSaveFilePicker({
+                    suggestedName,
+                    types: [{
+                        description,
+                        accept
+                    }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                // When we reach here, the OS file destination dialog has closed and file is written!
+                return true;
+            } catch (err: any) {
+                // If user pressed Cancel or closed the file dialog:
+                if (err.name === 'AbortError') {
+                    return false;
+                }
+                console.warn('showSaveFilePicker error, falling back to link download:', err);
+            }
+        }
+
+        // 2. Fallback for browsers without showSaveFilePicker
+        return new Promise<boolean>((resolve) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = suggestedName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                resolve(true);
+            }, 800);
+        });
     };
 
-    const handleExportCSV = () => {
+    const handleExportData = async (): Promise<boolean> => {
+        const dataStr = JSON.stringify(collections, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const suggestedName = `tech-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        return await saveFileWithPicker(blob, suggestedName, 'JSON Backup File', { 'application/json': ['.json'] });
+    };
+
+    const handleExportCSV = async (): Promise<boolean> => {
         const escapeCsvCell = (val: any): string => {
             if (val === null || val === undefined) return '';
             const str = String(val);
@@ -64,7 +105,7 @@ export function useImportExport(
                     p.name,
                     p.category,
                     p.price !== undefined && p.price !== null ? String(p.price) : '',
-                    p.currency || 'USD',
+                    p.currency || defaultCurrency || 'USD',
                     monthName,
                     String(p.purchaseYear),
                     purchaseDate,
@@ -80,56 +121,61 @@ export function useImportExport(
         // Add UTF-8 BOM so Excel opens non-ASCII characters correctly
         const csvContent = '\uFEFF' + rows.map(r => r.map(escapeCsvCell).join(',')).join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `tech-tracker-inventory-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        const suggestedName = `tech-tracker-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+        return await saveFileWithPicker(blob, suggestedName, 'CSV Spreadsheet', { 'text/csv': ['.csv'] });
     };
 
-    const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const input = event.target;
-        const file = input.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const content = e.target?.result as string;
-                let parsed = JSON.parse(content);
-
-                // Normalize single object vs array
-                if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed !== null && 'products' in parsed) {
-                    parsed = [parsed];
-                }
-
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    if (onProcessImport) {
-                        onProcessImport(parsed);
-                    } else {
-                        if (window.confirm("Overwrite current data with this backup?")) {
-                            setFilterCategories([]);
-                            setCollections(parsed);
-                            if (parsed[0].id) {
-                                setActiveCollectionId(parsed[0].id);
-                            }
-                            setIsMobileMenuOpen(false);
-                        }
-                    }
-                } else {
-                    alert('Invalid backup file structure.');
-                }
-            } catch (err) {
-                console.error('Import failed:', err);
-                alert('Failed to read backup file. Make sure it is a valid JSON exported from this app.');
-            } finally {
-                input.value = '';
+    const handleImportData = (event: React.ChangeEvent<HTMLInputElement>): Promise<boolean> => {
+        return new Promise((resolve, reject) => {
+            const input = event.target;
+            const file = input.files?.[0];
+            if (!file) {
+                resolve(false);
+                return;
             }
-        };
-        reader.readAsText(file);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const content = e.target?.result as string;
+                    let parsed = JSON.parse(content);
+
+                    // Normalize single object vs array
+                    if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed !== null && 'products' in parsed) {
+                        parsed = [parsed];
+                    }
+
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (onProcessImport) {
+                            await onProcessImport(parsed);
+                        } else {
+                            if (window.confirm("Overwrite current data with this backup?")) {
+                                setFilterCategories([]);
+                                setCollections(parsed);
+                                if (parsed[0].id) {
+                                    setActiveCollectionId(parsed[0].id);
+                                }
+                                setIsMobileMenuOpen(false);
+                            }
+                        }
+                        resolve(true);
+                    } else {
+                        alert('Invalid backup file structure.');
+                        resolve(false);
+                    }
+                } catch (err) {
+                    console.error('Import failed:', err);
+                    alert('Failed to read backup file. Make sure it is a valid JSON exported from this app.');
+                    reject(err);
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.onerror = (err) => {
+                reject(err);
+            };
+            reader.readAsText(file);
+        });
     };
 
     return {

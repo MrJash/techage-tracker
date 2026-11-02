@@ -1,0 +1,101 @@
+/* ArcUI Toast CSS Module — styled with shadcn/ui semantic tokens */
+.toast {
+  display: flex;
+  width: min(100%, 25rem);
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 0.75rem);
+  background: var(--popover, var(--card));
+  color: var(--popover-foreground, var(--foreground));
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.icon {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, #10b981 30%, var(--border));
+  border-radius: 9999px;
+  background: color-mix(in oklab, #10b981 12%, var(--popover, var(--card)));
+  color: #10b981;
+}
+
+.frame {
+  display: block;
+  min-width: 0;
+  flex: 1;
+}
+
+.copy {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+  padding-top: 0.15rem;
+}
+
+.title {
+  position: relative;
+  display: block;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  color: var(--foreground);
+}
+
+.line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.description {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.15rem;
+}
+
+.close {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  margin: -0.125rem -0.25rem 0 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .close:hover {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+}
+
+.close:active {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .close {
+    transition: none;
+  }
+  .close:active {
+    transform: none;
+  }
+}

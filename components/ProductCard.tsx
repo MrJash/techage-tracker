@@ -133,18 +133,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`group relative bg-white dark:bg-zinc-900 rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 p-5 flex flex-col justify-between h-full ${
+      className={`group relative bg-card text-card-foreground rounded-[var(--radius)] border shadow-sm hover:shadow-md transition-all duration-200 p-5 flex flex-col justify-between h-full ${
         isSelectMode ? 'cursor-pointer select-none' : ''
       } ${
         isDragging
-          ? 'opacity-40 scale-95 border-dashed border-slate-400 dark:border-zinc-600'
+          ? 'opacity-40 scale-95 border-dashed border-border'
           : isDraggedOver 
-            ? 'border-slate-900 dark:border-white scale-[1.02] shadow-lg' 
+            ? 'border-primary scale-[1.02] shadow-lg' 
             : isSelected
-              ? 'border-slate-800 dark:border-slate-200 ring-1 ring-slate-800 dark:ring-slate-200 bg-slate-50/50 dark:bg-zinc-800/20'
+              ? 'border-primary ring-1 ring-primary bg-accent/20'
               : isHighlighted
-                ? 'border-blue-500 ring-2 ring-blue-500/80 ring-offset-2 dark:ring-offset-zinc-950 shadow-lg shadow-blue-500/10 transition-all duration-300'
-                : 'border-slate-200 dark:border-zinc-800 dark:hover:border-zinc-700'
+                ? 'border-primary ring-2 ring-primary/80 ring-offset-2 ring-offset-background shadow-lg shadow-primary/10 transition-all duration-300'
+                : 'border-border'
       }`}
       draggable={!isSelectMode && isDragEnabled}
       onDragStart={handleDragStartInternal}
@@ -159,12 +159,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {isSelectMode && (
         <div className="absolute top-4 right-4 z-10">
-          <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm ${
+          <div className={`w-5 h-5 rounded-[var(--radius)] border flex items-center justify-center transition-all duration-150 shadow-xs ${
             isSelected 
-              ? 'bg-slate-900 border-slate-900 dark:bg-white dark:border-white' 
-              : 'bg-white border-slate-300 dark:bg-zinc-900 dark:border-zinc-600'
+              ? 'bg-primary border-primary text-primary-foreground' 
+              : 'bg-card border-input hover:border-primary/50'
           }`}>
-            {isSelected && <Check size={14} className="text-white dark:text-zinc-900" strokeWidth={3} />}
+            {isSelected && <Check size={13} className="text-primary-foreground" strokeWidth={3} />}
           </div>
         </div>
       )}
@@ -380,7 +380,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-end justify-between">
+      <div className="mt-4 pt-4 border-t border-border flex items-end justify-between">
         <div className="min-w-0 pr-3">
           <p className="text-xs font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-1">
             Current Age

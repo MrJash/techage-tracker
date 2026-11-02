@@ -76,35 +76,35 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     <DropdownMenu onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         {iconOnly ? (
-          <Button variant="outline" size="icon" className="h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-900 dark:text-white">
+          <Button variant="outline" size="icon" className="h-10 w-10 border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground rounded-[var(--radius)]">
             {Icon ? <Icon size={20} className="shrink-0" /> : <Filter size={20} className="shrink-0" />}
           </Button>
         ) : (
-          <Button variant="outline" className="flex h-10 w-[200px] items-center justify-between rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-normal ring-offset-white dark:ring-offset-black transition-all duration-200 hover:bg-slate-50 dark:hover:bg-zinc-800">
+          <Button variant="outline" className="flex h-10 w-[200px] items-center justify-between rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm font-normal ring-offset-background transition-all duration-200 hover:bg-accent hover:text-accent-foreground text-foreground">
             <div className="flex items-center min-w-0 flex-1">
-              {Icon && <Icon size={16} className={`mr-2 shrink-0 ${value.length === 0 ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`} />}
-              <span className={`block truncate ${value.length === 0 ? "text-slate-500 dark:text-zinc-500" : "text-slate-900 dark:text-white"}`}>
+              {Icon && <Icon size={16} className={`mr-2 shrink-0 ${value.length === 0 ? "text-muted-foreground" : "text-foreground"}`} />}
+              <span className={`block truncate ${value.length === 0 ? "text-muted-foreground" : "text-foreground"}`}>
                 {displayValue}
               </span>
             </div>
-            <ChevronDown size={16} className={`ml-2 text-slate-500 dark:text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`ml-2 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
           </Button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={`bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 max-h-80 overflow-y-auto ${iconOnly ? 'w-64' : 'w-[200px]'}`}>
+      <DropdownMenuContent align="end" className={`bg-popover text-popover-foreground border-border max-h-80 overflow-y-auto ${iconOnly ? 'w-64' : 'w-[200px]'}`}>
         <DropdownMenuItem
           onSelect={(e) => { e.preventDefault(); toggleSelectAll(); }}
           className="cursor-pointer font-medium mb-1 flex items-center gap-2"
         >
-          {isAllSelected ? <CheckSquare size={16} className="text-slate-900 dark:text-white" /> : <Square size={16} className="text-slate-400 dark:text-zinc-500" />}
+          {isAllSelected ? <CheckSquare size={16} className="text-foreground" /> : <Square size={16} className="text-muted-foreground" />}
           Select All
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800" />
+        <DropdownMenuSeparator className="bg-border" />
         
         {isGrouped ? (
           (options as SelectGroup[]).map((group, idx) => (
             <DropdownMenuGroup key={group.label}>
-              <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5 pt-2">
+              <DropdownMenuLabel className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider px-2 py-1.5 pt-2">
                 {group.label}
               </DropdownMenuLabel>
               {group.options.map(option => (
@@ -115,21 +115,21 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {value.includes(option.value) ? (
-                      <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" />
+                      <CheckSquare size={16} className="text-primary shrink-0" />
                     ) : (
-                      <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                      <Square size={16} className="text-muted-foreground shrink-0" />
                     )}
                     <span className="truncate">{option.label}</span>
                   </div>
                   {option.dotColor && (
                     <span 
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/15 dark:ring-white/20" 
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-border" 
                       style={{ backgroundColor: option.dotColor }}
                     />
                   )}
                 </DropdownMenuItem>
               ))}
-              {idx < options.length - 1 && <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800 my-1" />}
+              {idx < options.length - 1 && <DropdownMenuSeparator className="bg-border my-1" />}
             </DropdownMenuGroup>
           ))
         ) : (
@@ -142,15 +142,15 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {value.includes(option.value) ? (
-                    <CheckSquare size={16} className="text-slate-900 dark:text-white shrink-0" />
+                    <CheckSquare size={16} className="text-primary shrink-0" />
                   ) : (
-                    <Square size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                    <Square size={16} className="text-muted-foreground shrink-0" />
                   )}
                   <span className="truncate">{option.label}</span>
                 </div>
                 {option.dotColor && (
                   <span 
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/15 dark:ring-white/20" 
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-border" 
                     style={{ backgroundColor: option.dotColor }}
                   />
                 )}

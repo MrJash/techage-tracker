@@ -1,0 +1,128 @@
+/* ActionButton CSS Module — styled with shadcn/ui semantic tokens */
+.button {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 0.75rem;
+  border-radius: var(--radius, 0.5rem);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+}
+
+.button:disabled {
+  cursor: not-allowed;
+}
+
+.button:disabled:not([data-state="pending"]) {
+  opacity: 0.6;
+}
+
+.button[data-state="pending"] {
+  cursor: progress;
+}
+
+.content {
+  display: inline-flex;
+  min-height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.morph {
+  position: relative;
+  display: inline-grid;
+  min-width: 0;
+  justify-items: start;
+}
+
+.morph[data-morphing] {
+  clip-path: inset(-0.6em 0 -0.6em -0.3em);
+}
+
+/* The sizer holds the current label's width; the visible labels stack in the same cell while one fades out. */
+.sizer {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: pre;
+}
+
+.label {
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+
+.iconSlot {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  place-items: center;
+}
+
+.phase {
+  grid-area: 1 / 1;
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+}
+
+.arrow {
+  flex: none;
+}
+
+.statusIcon {
+  color: currentColor;
+}
+
+.spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1.75px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: spin 0.7s linear infinite;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  .spinner {
+    animation: none;
+  }
+}

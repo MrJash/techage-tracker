@@ -18,7 +18,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onAdd }) => {
       <p className="text-slate-500 dark:text-zinc-400 max-w-sm mb-8">
         This collection is empty. Add your electronic devices to start tracking their age.
       </p>
-      <Button onClick={onAdd} size="lg">
+      <Button onClick={onAdd} size="lg" data-tour="add-product-btn">
         Add Your First Product
       </Button>
     </div>

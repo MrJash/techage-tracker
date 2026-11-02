@@ -1,46 +1,28 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Sidebar, getCollectionIcon } from './components/Sidebar';
-import { ProductCard } from './components/ProductCard';
-import { EmptyState } from './components/EmptyState';
-import { Modal } from './components/Modal';
+import { Sidebar } from './components/Sidebar';
+import { ProductGrid } from './components/ProductGrid';
 import { Button } from './components/ui/button';
-import { Select } from './components/Select';
-import { SortDropdown } from './components/SortDropdown';
-import { MultiSelect } from './components/MultiSelect';
-import { ProductForm } from './components/ProductForm';
-import { AnimatedThemeToggler } from './components/ui/animated-theme-toggler';
 import { Collection, Product, MONTHS, CATEGORIES, CONDITIONS } from './types';
 import { generateId, calculateWarrantyStatus } from './utils/dateHelpers';
 import { Toast } from './components/Toast';
+import { ArcToast } from './components/arc/toast/toast';
+import { AppHeader } from './components/layout/AppHeader';
+import { PendingSyncBanner } from './components/layout/PendingSyncBanner';
+import { ProductModals } from './components/modals/ProductModals';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
+import { useProductSelection } from './hooks/useProductSelection';
 import { useImportExport } from './hooks/useImportExport';
 import { ImportDiffModal } from './components/ImportDiffModal';
 import { compareCollections, ImportDiffResult } from './utils/diffHelpers';
 import { useAuth } from './hooks/useAuth';
 import { loadCollectionsFromFirestore, saveCollectionsToFirestore, deleteReceiptFromFirestore, clearReceiptSyncCache, loadUserPreferencesFromFirestore, saveUserPreferencesToFirestore, UserPreferences } from './lib/firestoreService';
 
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from './components/AlertDialog';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-} from './components/ui/dropdown-menu';
-
-import { Plus, Menu, CloudUpload, Sun, Moon, Filter, ArrowUpDown, Upload, X, Eye, Download, Save, ListChecks, XSquare, Trash2, FolderInput, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon, Search, Command, Settings } from 'lucide-react';
+import { Plus, Sparkles, ThumbsUp, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
-import { SettingsModal, ThemeMode } from './components/SettingsModal';
+import { SettingsModal, ThemeMode, ThemePreset } from './components/SettingsModal';
+import { useGuidedTour } from './hooks/useGuidedTour';
+import { WelcomeTour } from './components/tutorial/WelcomeTour';
+import { GuidedTour } from './components/tutorial/GuidedTour';
 import { CurrencyCode, DEFAULT_CURRENCY, formatPrice, SUPPORTED_CURRENCIES } from './utils/currency';
 import { AgeFormat } from './utils/dateHelpers';
 import { 
@@ -52,6 +34,7 @@ import {
 
 const STORAGE_KEY = 'tech_tracker_data';
 const THEME_KEY = 'tech_tracker_theme';
+const THEME_PRESET_KEY = 'techage_pref_theme_preset';
 const CURRENCY_KEY = 'tech_tracker_currency';
 const AGE_FORMAT_KEY = 'techage_pref_age_format';
 const DEFAULT_WARRANTY_KEY = 'techage_pref_default_warranty';
@@ -62,7 +45,7 @@ const LAST_ACTIVE_COLLECTION_KEY = 'techage_last_active_collection';
 const DEFAULT_COLLECTIONS: Collection[] = [
   {
     id: 'default',
-    name: 'My Electronics',
+    name: 'My Collection',
     products: []
   }
 ];
@@ -76,7 +59,7 @@ const EMPTY_FORM = {
   currency: DEFAULT_CURRENCY,
   warrantyYears: '',
   receipt: '',
-  condition: '',
+  condition: 'Fine',
   tags: [] as string[]
 };
 
@@ -157,13 +140,29 @@ export default function App() {
     }
   };
 
-  // Full Preferences Helper for Cloud Firestore Sync
+  // Theme Preset ('default' | 'bold-tech')
+  const [themePreset, setThemePreset] = useState<ThemePreset>(() => {
+    return (localStorage.getItem(THEME_PRESET_KEY) as ThemePreset) || 'default';
+  });
+
+  const applyThemePreset = (preset: ThemePreset) => {
+    if (preset === 'default') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', preset);
+    }
+  };
+
+  useEffect(() => {
+    applyThemePreset(themePreset);
+  }, [themePreset]);
+
+  // Full Preferences Helper for Cloud Firestore Sync (Theme & Preset remain device-local)
   const getFullPreferences = (overrides?: Partial<UserPreferences>): UserPreferences => ({
     defaultCurrency: currency,
     ageFormat,
     defaultWarranty,
     defaultOpeningCollection,
-    themeMode,
     tagColors,
     ...overrides,
   });
@@ -180,7 +179,12 @@ export default function App() {
     setThemeMode(mode);
     localStorage.setItem(THEME_KEY, mode);
     applyThemeMode(mode);
-    savePreferencesToCloud({ themeMode: mode });
+  };
+
+  const handleThemePresetChange = (preset: ThemePreset) => {
+    setThemePreset(preset);
+    localStorage.setItem(THEME_PRESET_KEY, preset);
+    applyThemePreset(preset);
   };
 
   // Age Display Format Preference
@@ -244,6 +248,17 @@ export default function App() {
 
   // General Toast message state
   const [generalToastMessage, setGeneralToastMessage] = useState<string | null>(null);
+
+  // ArcUI Animated Toast state
+  const [arcToast, setArcToast] = useState<{
+    title: string;
+    description?: string;
+    id: number;
+  } | null>(null);
+
+  const showArcToast = (title: string, description?: string) => {
+    setArcToast({ title, description, id: Date.now() });
+  };
 
   // Local storage footprint calculation
   const { totalReceiptsCount, totalReceiptsBytes } = useMemo(() => {
@@ -373,8 +388,23 @@ export default function App() {
     setFilterCategories, 
     setActiveCollectionId, 
     setIsMobileMenuOpen,
-    (importedData) => handleProcessImport(importedData)
+    (importedData) => handleProcessImport(importedData),
+    currency
   );
+
+  const handleExportDataWithToast = async () => {
+    const success = await handleExportData();
+    if (success) {
+      showArcToast('Export Successful', 'Inventory backup JSON file saved.');
+    }
+  };
+
+  const handleExportCSVWithToast = async () => {
+    const success = await handleExportCSV();
+    if (success) {
+      showArcToast('Export Successful', 'Inventory CSV spreadsheet saved.');
+    }
+  };
   
   // -- Form State --
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -384,76 +414,58 @@ export default function App() {
     index: number; 
   } | null>(null);
 
-  // Multi-Select State
-  const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  // Multi-Select State & Batch Operations
+  const {
+    isSelectMode,
+    setIsSelectMode,
+    selectedProductIds,
+    setSelectedProductIds,
+    toggleSelectProduct,
+    handleLongPress,
+    handleBatchDelete,
+    handleBatchMove,
+    clearSelection,
+  } = useProductSelection(collections, setCollections, user?.uid);
 
-  // Cancel selection on Escape key
-  useEffect(() => {
-    if (!isSelectMode) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsSelectMode(false);
-        setSelectedProductIds([]);
-      }
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-    };
-  }, [isSelectMode]);
+  // Guided Tour Onboarding detection
+  const totalProductsAcrossAllCollections = useMemo(() => {
+    return collections.reduce((acc, col) => acc + (col.products?.length || 0), 0);
+  }, [collections]);
 
-  const toggleSelectProduct = (id: string) => {
-    setSelectedProductIds(prev => 
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+  const hasUserCustomData = useMemo(() => {
+    return (
+      totalProductsAcrossAllCollections > 0 ||
+      collections.some(
+        col => col.id !== 'default' || (col.products && col.products.length > 0) || (col.name !== 'My Collection' && col.name !== 'My Electronics')
+      )
     );
-  };
+  }, [totalProductsAcrossAllCollections, collections]);
 
-  const handleLongPress = (id: string) => {
-    setIsSelectMode(true);
-    setSelectedProductIds([id]);
-  };
+  const isDataHydrated = !authLoading && (!user || cloudSyncReady);
 
-  const handleBatchDelete = () => {
-    if (!window.confirm(`Delete ${selectedProductIds.length} items?`)) return;
-    if (user) {
-      selectedProductIds.forEach(id => {
-        deleteReceiptFromFirestore(user.uid, id).catch(() => {});
-      });
-    }
-    setCollections(prev => prev.map(col => ({
-      ...col,
-      products: col.products.filter(p => !selectedProductIds.includes(p.id))
-    })));
-    setIsSelectMode(false);
-    setSelectedProductIds([]);
-  };
-
-  const handleBatchMove = (targetCollectionId: string) => {
-    let productsToMove: Product[] = [];
-    
-    // Remove from all collections
-    const removedCollections = collections.map(col => {
-      const remaining = col.products.filter(p => !selectedProductIds.includes(p.id));
-      const removed = col.products.filter(p => selectedProductIds.includes(p.id));
-      productsToMove = [...productsToMove, ...removed];
-      return { ...col, products: remaining };
-    });
-
-    // Add to target collection
-    const finalCollections = removedCollections.map(col => {
-      if (col.id === targetCollectionId) {
-        return { ...col, products: [...col.products, ...productsToMove] };
-      }
-      return col;
-    });
-
-    setCollections(finalCollections);
-    setIsSelectMode(false);
-    setSelectedProductIds([]);
-  };
-
-
+  const {
+    isTourOpen,
+    isWelcomeOpen,
+    currentStep,
+    currentStepIndex,
+    totalSteps,
+    startTour,
+    restartTour,
+    nextStep,
+    prevStep,
+    skipTour,
+    finishTour,
+    dismissWelcome,
+  } = useGuidedTour({
+    isHydrated: isDataHydrated,
+    hasExistingData: hasUserCustomData,
+    onOpenAddModal: () => setIsAddModalOpen(true),
+    onCloseAddModal: () => { setIsAddModalOpen(false); setFormData(EMPTY_FORM); },
+    onOpenSettings: () => setIsSettingsOpen(true),
+    onCloseSettings: () => setIsSettingsOpen(false),
+    isAddModalOpen,
+    isSettingsOpen,
+  });
 
   // -- Effects --
 
@@ -511,11 +523,6 @@ export default function App() {
       if (prefs.defaultOpeningCollection) {
         setDefaultOpeningCollection(prefs.defaultOpeningCollection);
         localStorage.setItem(DEFAULT_COLLECTION_PREF_KEY, prefs.defaultOpeningCollection);
-      }
-      if (prefs.themeMode) {
-        setThemeMode(prefs.themeMode as ThemeMode);
-        localStorage.setItem(THEME_KEY, prefs.themeMode);
-        applyThemeMode(prefs.themeMode as ThemeMode);
       }
       if (prefs.tagColors && typeof prefs.tagColors === 'object') {
         setTagColors(prefs.tagColors as Record<string, TagColorId>);
@@ -588,7 +595,7 @@ export default function App() {
         setSyncError(err?.message || 'Auto-sync failed');
       })
       .finally(() => setIsSyncing(false));
-  }, [collections, currency, ageFormat, defaultWarranty, defaultOpeningCollection, themeMode, tagColors, cloudSyncReady, user, hasLocalImportPendingSync]);
+  }, [collections, currency, ageFormat, defaultWarranty, defaultOpeningCollection, tagColors, cloudSyncReady, user, hasLocalImportPendingSync]);
 
   // -- Import & Manual Sync Handlers --
   const handleProcessImport = async (importedData: Collection[]) => {
@@ -702,9 +709,11 @@ export default function App() {
     if (newMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem(THEME_KEY, 'dark');
+      setThemeMode('dark');
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem(THEME_KEY, 'light');
+      setThemeMode('light');
     }
   };
 
@@ -866,11 +875,12 @@ export default function App() {
     if (newCollections.length === 0) {
         const defaultCollection = {
           id: generateId(),
-          name: 'My Electronics',
+          name: 'My Collection',
           products: []
         };
         setCollections([defaultCollection]);
         setActiveCollectionId(defaultCollection.id);
+        setGeneralToastMessage("At least one collection is required. 'My Collection' has been reset.");
     } else {
         setCollections(newCollections);
         if (activeCollectionId === id) {
@@ -950,6 +960,7 @@ export default function App() {
     setCollections(updatedCollections);
     setIsAddModalOpen(false);
     setFormData(EMPTY_FORM);
+    showArcToast('Product Added', `"${newProduct.name}" added successfully.`);
   };
 
   const handleOpenEditProduct = (product: Product) => {
@@ -1001,6 +1012,7 @@ export default function App() {
     setCollections(updatedCollections);
     setEditingProduct(null);
     setFormData(EMPTY_FORM);
+    showArcToast('Product Saved', `"${formData.name}" saved successfully.`);
   };
 
   const handleCloseEditModal = () => {
@@ -1113,7 +1125,7 @@ export default function App() {
 
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-black font-sans text-slate-900 dark:text-zinc-100 overflow-hidden transition-colors duration-200">
+    <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden transition-colors duration-200">
       <Sidebar 
         collections={collections}
         activeCollectionId={activeCollectionId}
@@ -1121,8 +1133,8 @@ export default function App() {
         onAddCollection={handleAddCollection}
         onDeleteCollection={handleDeleteCollection}
         onRenameCollection={handleRenameCollection}
-        onExportData={handleExportData}
-        onExportCSV={handleExportCSV}
+        onExportData={handleExportDataWithToast}
+        onExportCSV={handleExportCSVWithToast}
         onImportData={handleImportData}
         isOpenMobile={isMobileMenuOpen}
         setIsOpenMobile={setIsMobileMenuOpen}
@@ -1138,520 +1150,87 @@ export default function App() {
 
       <div className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
         {hasLocalImportPendingSync && user && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 sm:px-6 py-2 flex items-center justify-between gap-3 text-xs text-amber-700 dark:text-amber-400 shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="truncate">Imported data is kept local. Cloud save has not been updated yet.</span>
-            </div>
-            <Button
-              size="sm"
-              onClick={handleManualSyncToFirebase}
-              disabled={isSyncing}
-              className="h-6 text-[11px] bg-amber-600 hover:bg-amber-700 text-white gap-1 px-2.5 py-0 shrink-0"
-            >
-              <CloudUpload size={12} />
-              {isSyncing ? 'Syncing...' : 'Sync to Firebase'}
-            </Button>
-          </div>
+          <PendingSyncBanner
+            onSync={handleManualSyncToFirebase}
+            isSyncing={isSyncing}
+          />
         )}
-        <header className="bg-white dark:bg-black border-b border-slate-200 dark:border-zinc-800 shrink-0 transition-colors duration-200 h-auto md:h-20">
-          {/* Mobile 2-line layout (< md:) */}
-          <div className="md:hidden px-4 py-2.5 flex flex-col gap-2">
-            {/* Top row: Hamburger on left, all action icons on right */}
-            <div className="flex items-center justify-between">
-              <button 
-                type="button"
-                className="shrink-0 p-2 -ml-1.5 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                onClick={() => setIsMobileMenuOpen(true)}
-                title="Open navigation menu"
-                aria-label="Open navigation menu"
-              >
-                <Menu size={22} className="shrink-0" />
-              </button>
+        <AppHeader
+          activeCollection={activeCollection}
+          collections={collections}
+          valuationEntries={valuationEntries}
+          filterCategories={filterCategories}
+          onFilterCategoriesChange={setFilterCategories}
+          filterOptions={filterOptions}
+          activeSortOrder={activeSortOrder}
+          onSortChange={handleSortChange}
+          sortOptions={sortOptions}
+          isSelectMode={isSelectMode}
+          onToggleSelectMode={setIsSelectMode}
+          selectedProductIds={selectedProductIds}
+          onClearSelection={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
+          onBatchDelete={handleBatchDelete}
+          onBatchMove={handleBatchMove}
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onThemeToggle={(newMode) => handleThemeModeChange(newMode)}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        />
 
-              <div className="flex items-center gap-1 sm:gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shrink-0"
-                  title="Search all products (Ctrl+K)"
-                  aria-label="Search all products"
-                >
-                  <Search size={16} />
-                </button>
-
-                {isSelectMode ? (
-                  <>
-                    <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      onClick={handleBatchDelete} 
-                      disabled={selectedProductIds.length === 0} 
-                      title="Delete Selected" 
-                      className="h-9 w-9 shrink-0"
-                    >
-                      <Trash2 size={15} />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          disabled={selectedProductIds.length === 0} 
-                          title="Move Selected" 
-                          className="h-9 w-9 shrink-0 border border-slate-200 dark:border-zinc-700"
-                        >
-                          <FolderInput size={15} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700">
-                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
-                          Move to
-                        </DropdownMenuLabel>
-                        <DropdownMenuGroup>
-                          {collections.filter(c => c.id !== activeCollectionId).map(col => (
-                            <DropdownMenuItem 
-                              key={col.id} 
-                              onClick={() => handleBatchMove(col.id)} 
-                              className="gap-2 cursor-pointer text-xs"
-                            >
-                              {col.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shrink-0"
-                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
-                      title="Cancel Selection"
-                    >
-                      <XSquare size={15} />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 shrink-0"
-                      onClick={() => { setIsSelectMode(true); }}
-                      title="Select Items"
-                    >
-                      <ListChecks size={16} />
-                    </Button>
-                    <MultiSelect
-                      value={filterCategories}
-                      onChange={setFilterCategories}
-                      options={filterOptions}
-                      placeholder="Filter"
-                      icon={Filter}
-                      iconOnly={true}
-                    />
-                    <SortDropdown
-                      value={activeSortOrder}
-                      onChange={handleSortChange}
-                      options={sortOptions}
-                      iconOnly={true}
-                    />
-                  </>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
-                  title="Settings"
-                  aria-label="Settings"
-                >
-                  <Settings size={18} />
-                </button>
-
-                <AnimatedThemeToggler 
-                  onThemeToggle={(newMode) => handleThemeModeChange(newMode)}
-                  className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
-                />
-              </div>
-            </div>
-
-            {/* Bottom row: Collection Name + Count on left, Valuation on right */}
-            <div className="flex items-center justify-between pt-0.5">
-              <div className="min-w-0 pr-2">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white truncate leading-tight">
-                  {activeCollection.name}
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                  {activeCollection.products.length} Items
-                </p>
-              </div>
-
-              {valuationEntries.length > 0 && (
-                <div 
-                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/60 text-xs font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700"
-                  title="Total Valuation of Collection"
-                >
-                  {valuationEntries.map(([currCode, sum], i) => (
-                    <React.Fragment key={currCode}>
-                      {i > 0 && <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>}
-                      <span>{formatPrice(sum as number, currCode as CurrencyCode)}</span>
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Desktop & Tablet 1-line layout (md: and above) */}
-          <div className="hidden md:flex h-full px-6 items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-              <button 
-                type="button"
-                className="lg:hidden shrink-0 p-2 -ml-2 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                onClick={() => setIsMobileMenuOpen(true)}
-                title="Open navigation menu"
-                aria-label="Open navigation menu"
-              >
-                <Menu size={22} className="shrink-0" />
-              </button>
-              <div className="min-w-0 truncate">
-                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
-                  {activeCollection.name}
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium truncate">
-                  {activeCollection.products.length} Items
-                </p>
-              </div>
-              
-              {valuationEntries.length > 0 && (
-                <div 
-                  className="hidden xl:flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800/50 text-sm font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 cursor-default"
-                  title="Total Valuation of Collection"
-                >
-                  {valuationEntries.map(([currCode, sum], i) => (
-                    <React.Fragment key={currCode}>
-                      {i > 0 && <span className="text-slate-300 dark:text-zinc-600 font-normal">•</span>}
-                      <span>{formatPrice(sum as number, currCode as CurrencyCode)}</span>
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 lg:gap-3 shrink-0">
-              {/* Desktop Full View (xl and above: >= 1280px) */}
-              <div className="hidden xl:flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="flex items-center gap-2 h-10 px-3 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-slate-500 dark:text-zinc-400 hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-all shadow-sm group min-w-[210px]"
-                  title="Search all products (Ctrl+K)"
-                >
-                  <Search size={15} className="text-slate-400 group-hover:text-slate-900 dark:text-zinc-500 dark:group-hover:text-white shrink-0" />
-                  <span className="flex-1 text-left truncate text-xs text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:group-hover:text-white font-normal">
-                    Search all items...
-                  </span>
-                  <kbd className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-zinc-700 shadow-xs">
-                    <Command size={11} strokeWidth={2.5} className="shrink-0" />
-                    <span className="font-semibold text-[11px]">K</span>
-                  </kbd>
-                </button>
-                {isSelectMode ? (
-                  <>
-                    <Button variant="destructive" onClick={handleBatchDelete} disabled={selectedProductIds.length === 0} title="Delete Selected" className="h-10 px-3">
-                      <Trash2 />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" disabled={selectedProductIds.length === 0} title="Move Selected" className="h-10 px-3 border border-slate-200 dark:border-zinc-700">
-                          <FolderInput />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[200px] bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700">
-                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
-                          Move to
-                        </DropdownMenuLabel>
-                        <DropdownMenuGroup>
-                          {collections.filter(c => c.id !== activeCollectionId).length === 0 ? (
-                            <div className="px-2 py-1.5 text-sm text-slate-400 dark:text-zinc-500">
-                              No other collections
-                            </div>
-                          ) : (
-                            collections
-                              .filter(c => c.id !== activeCollectionId)
-                              .map(col => (
-                                <DropdownMenuItem 
-                                  key={col.id} 
-                                  onClick={() => handleBatchMove(col.id)} 
-                                  className="gap-2 cursor-pointer"
-                                >
-                                  {React.createElement(getCollectionIcon(col.name), { size: 14, className: 'text-slate-400 dark:text-zinc-500 shrink-0' })}
-                                  {col.name}
-                                </DropdownMenuItem>
-                              ))
-                          )}
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="outline"
-                      className="h-10 rounded-lg font-normal border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 shadow-sm"
-                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
-                    >
-                      <XSquare size={16} className="mr-2" />
-                      Cancel Selection
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="h-10 rounded-lg font-normal border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all duration-200 shadow-sm"
-                      onClick={() => { setIsSelectMode(true); }}
-                    >
-                      <ListChecks size={16} className="mr-2" />
-                      Select
-                    </Button>
-                    <div className="w-px h-6 bg-slate-200 dark:bg-zinc-800 mx-1" />
-                    <MultiSelect
-                      value={filterCategories}
-                      onChange={setFilterCategories}
-                      options={filterOptions}
-                      placeholder="Filter Items"
-                      icon={Filter}
-                    />
-                    <SortDropdown
-                      value={activeSortOrder}
-                      onChange={handleSortChange}
-                      options={sortOptions}
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Tablet Compact View (md to xl: 768px - 1279px, including iPad Landscape 1024px) */}
-              <div className="flex xl:hidden items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="h-10 w-10 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shrink-0"
-                  title="Search all products (Ctrl+K)"
-                  aria-label="Search all products"
-                >
-                  <Search size={18} />
-                </button>
-
-                {isSelectMode ? (
-                  <>
-                    <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      onClick={handleBatchDelete} 
-                      disabled={selectedProductIds.length === 0} 
-                      title="Delete Selected" 
-                      className="h-10 w-10 shrink-0"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          disabled={selectedProductIds.length === 0} 
-                          title="Move Selected" 
-                          className="h-10 w-10 shrink-0 border border-slate-200 dark:border-zinc-700"
-                        >
-                          <FolderInput size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[180px] bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700">
-                        <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
-                          Move to
-                        </DropdownMenuLabel>
-                        <DropdownMenuGroup>
-                          {collections.filter(c => c.id !== activeCollectionId).map(col => (
-                            <DropdownMenuItem 
-                              key={col.id} 
-                              onClick={() => handleBatchMove(col.id)} 
-                              className="gap-2 cursor-pointer text-xs"
-                            >
-                              {col.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shrink-0"
-                      onClick={() => { setIsSelectMode(false); setSelectedProductIds([]); }}
-                      title="Cancel Selection"
-                    >
-                      <XSquare size={16} />
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 shrink-0"
-                      onClick={() => { setIsSelectMode(true); }}
-                      title="Select Items"
-                    >
-                      <ListChecks size={18} />
-                    </Button>
-                    <MultiSelect
-                      value={filterCategories}
-                      onChange={setFilterCategories}
-                      options={filterOptions}
-                      placeholder="Filter"
-                      icon={Filter}
-                      iconOnly={true}
-                    />
-                    <SortDropdown
-                      value={activeSortOrder}
-                      onChange={handleSortChange}
-                      options={sortOptions}
-                      iconOnly={true}
-                    />
-                  </>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-2.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
-                title="Settings"
-                aria-label="Settings"
-              >
-                <Settings size={20} />
-              </button>
-
-              <AnimatedThemeToggler 
-                onThemeToggle={(newMode) => handleThemeModeChange(newMode)}
-                className="p-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center shrink-0"
-              />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth custom-scrollbar">
-          <div className="max-w-[1600px] w-full mx-auto space-y-6">
-
-            {filteredAndSortedProducts.length === 0 ? (
-              <EmptyState 
-                onAdd={handleOpenAddModal}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 pb-24">
-                {filteredAndSortedProducts.map((product) => (
-                  <div 
-                    key={product.id}
-                    id={`product-${product.id}`}
-                    onDragOver={handleDragOver}
-                    className="relative"
-                  >
-                    <ProductCard
-                      product={product}
-                      onEdit={handleOpenEditProduct}
-                      onDelete={handleDeleteProduct}
-                      onDeleteReceipt={handleDeleteReceipt}
-                      onMove={handleMoveProduct}
-                      availableCollections={collections.filter(c => c.id !== activeCollectionId)}
-                      onDragStart={handleDragStart}
-                      onDragOver={handleDragOver}
-                      onDragEnter={() => handleDragEnter(product.id)}
-                      onDrop={handleDrop}
-                      onDragEnd={handleDragEnd}
-                      isDraggedOver={dragOverProductId === product.id}
-                      isSelectMode={isSelectMode}
-                      isSelected={selectedProductIds.includes(product.id)}
-                      onToggleSelect={toggleSelectProduct}
-                      onLongPress={handleLongPress}
-                      currency={currency}
-                      isHighlighted={highlightedProductId === product.id}
-                      tagColors={tagColors}
-                      ageFormat={ageFormat}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
+        <ProductGrid
+          products={filteredAndSortedProducts}
+          activeCollectionId={activeCollectionId}
+          collections={collections}
+          currency={currency}
+          ageFormat={ageFormat}
+          tagColors={tagColors}
+          highlightedProductId={highlightedProductId}
+          dragOverProductId={dragOverProductId}
+          isSelectMode={isSelectMode}
+          selectedProductIds={selectedProductIds}
+          onOpenAddModal={handleOpenAddModal}
+          onOpenEditProduct={handleOpenEditProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onDeleteReceipt={handleDeleteReceipt}
+          onMoveProduct={handleMoveProduct}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnter={(id) => handleDragEnter(id)}
+          onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
+          onToggleSelect={toggleSelectProduct}
+          onLongPress={handleLongPress}
+        />
 
       </div>
 
-      {/* Add Product Modal */}
-      <Modal 
-        isOpen={isAddModalOpen} 
-        onClose={() => { setIsAddModalOpen(false); setFormData(EMPTY_FORM); }}
-        title="Add New Product"
-      >
-        <form onSubmit={handleAddProduct} className="space-y-4">
-          <ProductForm
-            formData={formData}
-            setFormData={setFormData}
-            handleFileChange={handleFileChange}
-            categoryOptions={categoryOptions}
-            monthOptions={monthOptions}
-            yearOptions={yearOptions}
-            conditionOptions={conditionOptions}
-            currency={currency}
-            availableTags={allUniqueTags}
-            tagColors={tagColors}
-            onSetTagColor={handleSetTagColor}
-          />
-          <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
-            <Button type="submit" className="w-full">
-              <Plus size={18} />
-              Add Product
-            </Button>
-          </div>
-
-        </form>
-      </Modal>
-
-      {/* Edit Product Modal */}
-      <Modal
-        isOpen={!!editingProduct}
-        onClose={handleCloseEditModal}
-        title="Edit Product Details"
-      >
-        <form onSubmit={handleEditProduct} className="space-y-4">
-          <ProductForm
-            formData={formData}
-            setFormData={setFormData}
-            handleFileChange={handleFileChange}
-            categoryOptions={categoryOptions}
-            monthOptions={monthOptions}
-            yearOptions={yearOptions}
-            conditionOptions={conditionOptions}
-            currency={currency}
-            availableTags={allUniqueTags}
-            tagColors={tagColors}
-            onSetTagColor={handleSetTagColor}
-          />
-          <div className="-mx-6 -mb-6 px-6 py-4 mt-6 border-t border-slate-100 dark:border-zinc-800">
-            <Button type="submit" className="w-full">
-              <Save size={18} />
-              Save Changes
-            </Button>
-          </div>
-
-        </form>
-      </Modal>
+      {/* Add & Edit Product Modals */}
+      <ProductModals
+        isAddModalOpen={isAddModalOpen}
+        onCloseAddModal={() => { setIsAddModalOpen(false); setFormData(EMPTY_FORM); }}
+        onAddSubmit={handleAddProduct}
+        editingProduct={editingProduct}
+        onCloseEditModal={handleCloseEditModal}
+        onEditSubmit={handleEditProduct}
+        formData={formData}
+        setFormData={setFormData}
+        handleFileChange={handleFileChange}
+        categoryOptions={categoryOptions}
+        monthOptions={monthOptions}
+        yearOptions={yearOptions}
+        conditionOptions={conditionOptions}
+        currency={currency}
+        allUniqueTags={allUniqueTags}
+        tagColors={tagColors}
+        onSetTagColor={handleSetTagColor}
+      />
 
       {/* Floating Action Button (FAB) */}
       {activeCollection.products.length > 0 && (
         <button
           onClick={handleOpenAddModal}
-          className="fixed bottom-8 right-8 z-40 flex items-center justify-center w-16 h-16 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.2)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.1)] hover:scale-110 active:scale-95 transition-all duration-300 group"
+          data-tour="add-product-btn"
+          className="fixed bottom-8 right-8 z-40 flex items-center justify-center w-16 h-16 bg-primary text-primary-foreground rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.2)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.1)] hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
           title="Add Product"
         >
           <Plus size={32} className="transition-transform duration-500 group-hover:rotate-90" />
@@ -1695,6 +1274,8 @@ export default function App() {
         onDefaultOpeningCollectionChange={handleDefaultOpeningCollectionChange}
         themeMode={themeMode}
         onThemeModeChange={handleThemeModeChange}
+        themePreset={themePreset}
+        onThemePresetChange={handleThemePresetChange}
         totalReceiptsCount={totalReceiptsCount}
         totalReceiptsBytes={totalReceiptsBytes}
         user={user}
@@ -1702,12 +1283,29 @@ export default function App() {
         onCloudResync={handleCloudResync}
         totalProductsCount={collections.reduce((sum, col) => sum + (col.products?.length || 0), 0)}
         totalCollectionsCount={collections.length}
-        onExportCSV={handleExportCSV}
-        onExportJSON={handleExportData}
+        onExportCSV={handleExportCSVWithToast}
+        onExportJSON={handleExportDataWithToast}
         onSignOut={signOut}
         onSignIn={signIn}
         onResetAllData={handleResetAllData}
+        onStartTour={restartTour}
       />
+
+      {/* ArcUI Notification Toast (Center Bottom) */}
+      {arcToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
+          <ArcToast
+            key={arcToast.id}
+            title={arcToast.title}
+            description={arcToast.description}
+            open={!!arcToast}
+            duration={3000}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) setArcToast(null);
+            }}
+          />
+        </div>
+      )}
 
       {/* Undo Toast */}
       {deletedProductInfo && (
@@ -1725,6 +1323,24 @@ export default function App() {
           onClose={() => setGeneralToastMessage(null)}
         />
       )}
+
+      {/* Guided Tutorial / Onboarding Tour */}
+      <WelcomeTour
+        isOpen={isWelcomeOpen}
+        onStartTour={startTour}
+        onDismiss={dismissWelcome}
+      />
+
+      <GuidedTour
+        isOpen={isTourOpen}
+        currentStep={currentStep}
+        currentStepIndex={currentStepIndex}
+        totalSteps={totalSteps}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onSkip={skipTour}
+        onFinish={finishTour}
+      />
     </div>
   );
 }

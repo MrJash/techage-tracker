@@ -1,6 +1,6 @@
 # TechAge Tracker — Project Memory & Architecture
 
-> **Current Version:** `v1.4.0` (Tagged `v1.4`)  
+> **Current Version:** `v1.5.0` (Tagged `v1.5`)  
 > **Author & Creator:** Jash Mewada  
 > **Repository:** [github.com/MrJash/techage-tracker](https://github.com/MrJash/techage-tracker)  
 > **Last Updated:** November 2026
@@ -62,9 +62,9 @@
     - Nested Card 2: *Danger Zone: Reset Workspace Data* — styled in warning red with confirmation dialog (`AlertDialog`) to purge local storage.
 
 - **Tab 3: About**
-  - Hero branding with glossy gradient app icon, version `v1.4.0` badge, and author credit: *"Crafted with ❤️ by Jash Mewada"*.
+  - Hero branding with glossy gradient app icon, version `v1.5.0` badge, and author credit: *"Crafted with ❤️ by Jash Mewada"*.
   - Technical Specifications card: Version, Creator attribution (`Jash Mewada ❤️`), and Cloud Database engine (`Cloud Firestore rules_version 2`).
-  - **Changelog Card:** Comprehensive timeline of post-v1.0 releases (`v1.4.0`, `v1.3.0`, `v1.2.0`) with balanced border divider spacing.
+  - **Changelog Card:** Comprehensive timeline of post-v1.0 releases (`v1.5.0`, `v1.4.0`, `v1.3.0`, `v1.2.0`) with balanced border divider spacing.
 
 ---
 
@@ -103,14 +103,22 @@ Configured under `rules_version = '2'`:
 
 ## 4. Release History Summary
 
+### `v1.5.0` (November 2026)
+- **Added** 2 new color themes: Sage Garden and Amber Minimal.
+- **Fixed** various theme-related bugs and visual contrast issues.
+- **Updated** Import button workflow and added animated toast notifications for exports, product additions, and saves.
+- **Unified** UI components consistency across buttons, dialogs, and selection controls.
+- **Added** support for Progressive Web App (PWA) with installability, offline icons, and mobile optimization.
+- **Fixed** bugs in Settings and improved overall performance.
+
 ### `v1.4.0` (November 2026)
-- **Structured** General Settings into 2 big cards with nested cards for Inventory, Storage, Data Portability, and Google Account & Cloud Services.
-- **Enlarged** Settings modal popup dimensions (`max-w-4xl`, `h-[760px]`) for enhanced desktop visibility.
-- **Added** 'Short' age display format (`3y 4m`).
+- **Structured** General Settings into 2 clean cards for storage, data portability, and cloud management.
+- **Enlarged** Settings modal dimensions for enhanced desktop visibility.
+- **Added** 'Short' age display format (e.g. 3y 4m).
 - **Implemented** real-time synchronization between the header animated theme toggler and General settings.
 - **Fixed** collection launch persistence on browser refresh to honor user preferences.
-- **Balanced** symmetric separator line spacing in the About changelog.
-- **Refined** CSV/JSON export buttons with symmetric hover effects and pixel-perfect badge alignment.
+- **Balanced** separator line spacing in the About changelog.
+- **Refined** CSV and JSON export buttons with cleaner hover effects.
 - **Added** author credits (*"Crafted with ❤️ by Jash Mewada"*) and in-app Changelog tracker.
 
 ### `v1.3.0`
@@ -142,3 +150,12 @@ Configured under `rules_version = '2'`:
    Always validate and compress image/PDF uploads before saving to localStorage or Firestore. A 750 KB ceiling ensures fast sync and prevents browser storage overflow.
 4. **Active Collection Restore:**  
    Always check both `DEFAULT_COLLECTION_PREF_KEY` and `LAST_ACTIVE_COLLECTION_KEY` when restoring active collection state during initial page load to respect user configuration.
+5. **Always Use shadcn/ui Semantic Tokens (Strict Styling Policy):**  
+   For all new components and refactoring existing UI, **never** hardcode static Tailwind palette classes (e.g., `bg-zinc-900`, `bg-zinc-950`, `border-zinc-800`, `text-slate-400`, `hover:bg-slate-50`, `bg-white`).  
+   **Always use shadcn/ui semantic tokens:**
+   - Surfaces: `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-popover`, `text-popover-foreground`
+   - Borders & Dividers: `border-border`, `divide-border`
+   - Interactive / Hover: `hover:bg-accent hover:text-accent-foreground`, `bg-muted text-muted-foreground`
+   - Accents & Primary: `bg-primary text-primary-foreground`, `ring-ring`
+   - Sidebar: `bg-sidebar`, `text-sidebar-foreground`, `border-sidebar-border`, `bg-sidebar-accent text-sidebar-accent-foreground`, `text-sidebar-primary`  
+   This ensures new components automatically and seamlessly adopt any current or future TweakCN theme (OKLCH, HEX, or CSS) in both light and dark modes.

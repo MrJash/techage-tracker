@@ -14,7 +14,6 @@ export interface UserPreferences {
   ageFormat?: 'detailed' | 'compact' | 'short' | 'total-months';
   defaultWarranty?: number;
   defaultOpeningCollection?: string;
-  themeMode?: 'system' | 'dark' | 'light';
   tagColors?: Record<string, string>;
 }
 

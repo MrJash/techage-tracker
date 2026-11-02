@@ -1,0 +1,166 @@
+/* ========================================================================== */
+/* Theme: Sage Garden (Source: https://tweakcn.com/r/themes/sage-garden.json) */
+/* ========================================================================== */
+
+[data-theme="sage-garden"] {
+  /* tweakcn Design Spec - Light Mode */
+  --background: oklch(0.9761 0.0041 91.4461);
+  --foreground: oklch(0.2417 0.0298 269.8827);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.2417 0.0298 269.8827);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.2417 0.0298 269.8827);
+  --primary: oklch(0.6333 0.0309 154.9039);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.8596 0.0291 119.9919);
+  --secondary-foreground: oklch(0.2417 0.0298 269.8827);
+  --muted: oklch(0.9251 0.0071 88.6450);
+  --muted-foreground: oklch(0.5510 0.0234 264.3637);
+  --accent: oklch(0.8242 0.0221 136.6092);
+  --accent-foreground: oklch(0.2417 0.0298 269.8827);
+  --destructive: oklch(0.5624 0.1743 26.1433);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9251 0.0071 88.6450);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.6333 0.0309 154.9039);
+  --chart-1: oklch(0.6333 0.0309 154.9039);
+  --chart-2: oklch(0.7209 0.0489 120.9474);
+  --chart-3: oklch(0.6744 0.0427 136.0110);
+  --chart-4: oklch(0.5510 0.0234 264.3637);
+  --chart-5: oklch(0.9251 0.0071 88.6450);
+  --radius: 0.35rem;
+  --sidebar: #f8f7f4;
+  --sidebar-foreground: #1a1f2e;
+  --sidebar-primary: #7c9082;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #bfc9bb;
+  --sidebar-accent-foreground: #1a1f2e;
+  --sidebar-border: #e8e6e1;
+  --sidebar-ring: #7c9082;
+  --font-sans: Antic, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Signifier, Georgia, serif;
+  --font-mono: JetBrains Mono, Courier New, monospace;
+  --shadow-color: #1a1f2e;
+  --shadow-opacity: 0.04;
+  --shadow-blur: 2px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
+  --shadow-2xs: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.02);
+  --shadow-xs: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.02);
+  --shadow-sm: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.04), 0px 1px 2px -1px hsl(225 27.7778% 14.1176% / 0.04);
+  --shadow: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.04), 0px 1px 2px -1px hsl(225 27.7778% 14.1176% / 0.04);
+  --shadow-md: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.04), 0px 2px 4px -1px hsl(225 27.7778% 14.1176% / 0.04);
+  --shadow-lg: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.04), 0px 4px 6px -1px hsl(225 27.7778% 14.1176% / 0.04);
+  --shadow-xl: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.04), 0px 8px 10px -1px hsl(225 27.7778% 14.1176% / 0.04);
+  --shadow-2xl: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 0.10);
+
+  /* Tailwind Palette Bridge (Light) - Text is deep slate navy, hover is distinct sage */
+  --color-slate-950: oklch(0.20 0.0298 269.8827);
+  --color-slate-900: oklch(0.2417 0.0298 269.8827); /* Foreground Text (Deep Slate-Navy) */
+  --color-slate-800: oklch(0.30 0.0298 269.8827);
+  --color-slate-700: oklch(0.40 0.0298 269.8827);
+  --color-slate-600: oklch(0.48 0.0298 269.8827);
+  --color-slate-500: oklch(0.5510 0.0234 264.3637); /* Muted Text */
+  --color-slate-400: oklch(0.70 0.0234 264.3637);
+  --color-slate-300: oklch(0.88 0 0); /* Neutral Borders */
+  --color-slate-200: oklch(0.9251 0 0); /* Neutral Borders/Dividers */
+  --color-slate-100: oklch(0.90 0.028 125); /* Pale Sage Olive for Active Pills */
+  --color-slate-50: oklch(0.945 0.015 125); /* Distinct Sage Hover Effect */
+
+  --color-zinc-950: oklch(0.20 0.0298 269.8827);
+  --color-zinc-900: oklch(0.2417 0.0298 269.8827);
+  --color-zinc-800: oklch(0.30 0.0298 269.8827);
+  --color-zinc-700: oklch(0.40 0.0298 269.8827);
+  --color-zinc-600: oklch(0.48 0.0298 269.8827);
+  --color-zinc-500: oklch(0.5510 0.0234 264.3637);
+  --color-zinc-400: oklch(0.70 0.0234 264.3637);
+  --color-zinc-300: oklch(0.88 0 0);
+  --color-zinc-200: oklch(0.9251 0 0);
+  --color-zinc-100: oklch(0.90 0.028 125);
+  --color-zinc-50: oklch(0.945 0.015 125);
+}
+
+.dark[data-theme="sage-garden"],
+[data-theme="sage-garden"].dark,
+html.dark[data-theme="sage-garden"] {
+  /* tweakcn Design Spec - Dark Mode */
+  --background: oklch(0.1448 0 0);
+  --foreground: oklch(0.9702 0 0);
+  --card: oklch(0.1822 0 0);
+  --card-foreground: oklch(0.9702 0 0);
+  --popover: oklch(0.1822 0 0);
+  --popover-foreground: oklch(0.9702 0 0);
+  --primary: oklch(0.6333 0.0309 154.9039);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.2178 0 0);
+  --secondary-foreground: oklch(0.9702 0 0);
+  --muted: oklch(0.2178 0 0);
+  --muted-foreground: oklch(0.7058 0 0);
+  --accent: oklch(0.3709 0.0248 153.9823);
+  --accent-foreground: oklch(0.9702 0 0);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.2850 0 0);
+  --input: oklch(0.2850 0 0);
+  --ring: oklch(0.6333 0.0309 154.9039);
+  --chart-1: oklch(0.6333 0.0309 154.9039);
+  --chart-2: oklch(0.7209 0.0489 120.9474);
+  --chart-3: oklch(0.6744 0.0427 136.0110);
+  --chart-4: oklch(0.5510 0.0234 264.3637);
+  --chart-5: oklch(0.5096 0.0289 152.3460);
+  --radius: 0.35rem;
+  --sidebar: oklch(0.1684 0 0);
+  --sidebar-foreground: oklch(0.9702 0 0);
+  --sidebar-primary: oklch(0.6333 0.0309 154.9039);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.2178 0 0);
+  --sidebar-accent-foreground: oklch(0.9702 0 0);
+  --sidebar-border: oklch(0.26 0.025 140);
+  --sidebar-ring: oklch(0.6333 0.0309 154.9039);
+  --font-sans: Antic, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Signifier, Georgia, serif;
+  --font-mono: JetBrains Mono, Courier New, monospace;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.04;
+  --shadow-blur: 2px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.02);
+  --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.02);
+  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.04), 0px 1px 2px -1px hsl(0 0% 0% / 0.04);
+  --shadow: 0px 1px 2px 0px hsl(0 0% 0% / 0.04), 0px 1px 2px -1px hsl(0 0% 0% / 0.04);
+  --shadow-md: 0px 1px 2px 0px hsl(0 0% 0% / 0.04), 0px 2px 4px -1px hsl(0 0% 0% / 0.04);
+  --shadow-lg: 0px 1px 2px 0px hsl(0 0% 0% / 0.04), 0px 4px 6px -1px hsl(0 0% 0% / 0.04);
+  --shadow-xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.04), 0px 8px 10px -1px hsl(0 0% 0% / 0.04);
+  --shadow-2xl: 0px 1px 2px 0px hsl(0 0% 0% / 0.10);
+
+  /* Tailwind Palette Bridge (Dark) - Neutral dark tones with forest sage accents */
+  --color-black: oklch(0.1448 0 0); /* Dark canvas background */
+  --color-zinc-950: oklch(0.1684 0 0); /* Dark sidebar background */
+  --color-zinc-900: oklch(0.1822 0 0); /* Dark card background */
+  --color-zinc-800: oklch(0.24 0.025 140); /* Deep forest sage for active/hover states */
+  --color-zinc-700: oklch(0.2850 0 0); /* Dark borders */
+  --color-zinc-600: oklch(0.3709 0.0248 153.9823); /* Accent forest sage */
+  --color-zinc-500: oklch(0.5510 0.0234 264.3637);
+  --color-zinc-400: oklch(0.7058 0 0); /* Muted text */
+  --color-zinc-300: oklch(0.85 0 0);
+  --color-zinc-200: oklch(0.92 0 0);
+  --color-zinc-100: oklch(0.9702 0 0); /* Foreground text */
+  --color-white: oklch(0.9702 0 0);
+
+  --color-slate-950: oklch(0.1448 0 0);
+  --color-slate-900: oklch(0.1822 0 0);
+  --color-slate-800: oklch(0.24 0.025 140);
+  --color-slate-700: oklch(0.2850 0 0);
+  --color-slate-600: oklch(0.3709 0.0248 153.9823);
+  --color-slate-500: oklch(0.5510 0.0234 264.3637);
+  --color-slate-400: oklch(0.7058 0 0);
+  --color-slate-300: oklch(0.85 0 0);
+  --color-slate-200: oklch(0.92 0 0);
+  --color-slate-100: oklch(0.9702 0 0);
+  --color-slate-50: oklch(0.1448 0 0);
+}

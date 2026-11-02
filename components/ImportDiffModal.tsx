@@ -38,20 +38,20 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="relative bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative bg-card text-card-foreground border border-border rounded-[var(--radius)] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <div className="p-2 rounded-[var(--radius)] bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <AlertTriangle size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+              <h2 className="text-base font-semibold text-foreground">
                 Import Difference Detected
               </h2>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 Your imported file differs from the data saved in Firebase Cloud.
               </p>
             </div>
@@ -59,39 +59,39 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors"
+            className="p-1.5 rounded-[var(--radius)] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Diff Summary Cards */}
-        <div className="px-6 py-3 bg-slate-50/70 dark:bg-zinc-950/40 border-b border-slate-100 dark:border-zinc-800 grid grid-cols-2 gap-3 shrink-0">
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-1">
+        <div className="px-6 py-3 bg-muted/40 border-b border-border grid grid-cols-2 gap-3 shrink-0">
+          <div className="p-3 bg-card rounded-[var(--radius)] border border-border">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
               <Cloud size={14} className="text-blue-500" />
               <span>Current Cloud Save</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-slate-900 dark:text-white">
+              <span className="text-lg font-bold text-foreground">
                 {diffResult.cloudProductsCount}
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-400">
+              <span className="text-xs text-muted-foreground">
                 items in {diffResult.cloudCollectionsCount} collections
               </span>
             </div>
           </div>
 
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-zinc-400 mb-1">
+          <div className="p-3 bg-card rounded-[var(--radius)] border border-border">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
               <HardDrive size={14} className="text-emerald-500" />
               <span>Imported File</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-slate-900 dark:text-white">
+              <span className="text-lg font-bold text-foreground">
                 {diffResult.importedProductsCount}
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-400">
+              <span className="text-xs text-muted-foreground">
                 items in {diffResult.importedCollectionsCount} collections
               </span>
             </div>
@@ -99,8 +99,8 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
         </div>
 
         {/* Change Counts Banner */}
-        <div className="px-6 py-2.5 bg-slate-100/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800 flex flex-wrap items-center gap-3 text-xs shrink-0">
-          <span className="font-medium text-slate-600 dark:text-zinc-400">Changes:</span>
+        <div className="px-6 py-2.5 bg-muted/30 border-b border-border flex flex-wrap items-center gap-3 text-xs shrink-0">
+          <span className="font-medium text-muted-foreground">Changes:</span>
           {diffResult.addedProductsCount > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
               <Plus size={12} /> {diffResult.addedProductsCount} New Item{diffResult.addedProductsCount > 1 ? 's' : ''}
@@ -126,17 +126,17 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
             return (
               <div 
                 key={col.id} 
-                className="rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden bg-slate-50/50 dark:bg-zinc-950/20"
+                className="rounded-[var(--radius)] border border-border overflow-hidden bg-muted/20"
               >
                 {/* Collection Header */}
-                <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-100/70 dark:bg-zinc-800/60 border-b border-slate-200/80 dark:border-zinc-800">
+                <div className="flex items-center justify-between px-3.5 py-2.5 bg-muted/60 border-b border-border">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Folder size={15} className="text-slate-500 dark:text-zinc-400 shrink-0" />
-                    <span className="text-sm font-semibold text-slate-800 dark:text-zinc-200 truncate">
+                    <Folder size={15} className="text-muted-foreground shrink-0" />
+                    <span className="text-sm font-semibold text-foreground truncate">
                       {col.name}
                     </span>
                     {col.oldName && (
-                      <span className="text-xs text-slate-400 line-through truncate">
+                      <span className="text-xs text-muted-foreground line-through truncate">
                         (was: {col.oldName})
                       </span>
                     )}
@@ -153,9 +153,9 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
                 </div>
 
                 {/* Product Differences */}
-                <div className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+                <div className="divide-y divide-border">
                   {col.productDiffs.length === 0 ? (
-                    <div className="p-3 text-xs text-slate-400 dark:text-zinc-500 italic">
+                    <div className="p-3 text-xs text-muted-foreground italic">
                       No product changes in this collection
                     </div>
                   ) : (
@@ -167,27 +167,27 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
                           className={`p-3 flex gap-2.5 text-xs ${hasChanges ? 'items-start' : 'items-center'}`}
                         >
                           {diff.type === 'added' && (
-                            <span className={`p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
+                            <span className={`p-1 rounded-[var(--radius)] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
                               <Plus size={12} />
                             </span>
                           )}
                           {diff.type === 'removed' && (
-                            <span className={`p-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
+                            <span className={`p-1 rounded-[var(--radius)] bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
                               <Minus size={12} />
                             </span>
                           )}
                           {diff.type === 'modified' && (
-                            <span className={`p-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
+                            <span className={`p-1 rounded-[var(--radius)] bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 ${hasChanges ? 'mt-0.5' : ''}`}>
                               <RefreshCw size={12} />
                             </span>
                           )}
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-800 dark:text-zinc-200">
+                              <span className="font-semibold text-foreground">
                                 {diff.product.name}
                               </span>
-                              <span className="text-[11px] text-slate-400 dark:text-zinc-500">
+                              <span className="text-[11px] text-muted-foreground">
                                 ({diff.product.category})
                               </span>
                             </div>
@@ -196,13 +196,13 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
                               <div className="mt-1.5 space-y-1">
                                 {diff.changes!.map((ch, cIdx) => (
                                   <div key={cIdx} className="flex items-center gap-1.5 text-[11px]">
-                                    <span className="text-slate-400 dark:text-zinc-500 font-medium">
+                                    <span className="text-muted-foreground font-medium">
                                       {ch.field}:
                                     </span>
                                     <span className="text-rose-500 dark:text-rose-400 line-through">
                                       {ch.oldValue}
                                     </span>
-                                    <ArrowRight size={10} className="text-slate-400 shrink-0" />
+                                    <ArrowRight size={10} className="text-muted-foreground shrink-0" />
                                     <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                                       {ch.newValue}
                                     </span>
@@ -222,8 +222,8 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
         </div>
 
         {/* Modal Footer with Actions */}
-        <div className="p-4 sm:px-6 bg-slate-50 dark:bg-zinc-950/60 border-t border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <p className="text-[11px] text-slate-500 dark:text-zinc-400 text-center sm:text-left">
+        <div className="p-4 sm:px-6 bg-muted/30 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <p className="text-[11px] text-muted-foreground text-center sm:text-left">
             Choose how to handle the difference with your cloud backup.
           </p>
 
@@ -245,7 +245,7 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
               size="sm"
               onClick={onConfirmKeepLocal}
               disabled={isProcessing}
-              className="text-xs gap-1.5 border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800"
+              className="text-xs gap-1.5 border-border hover:bg-accent hover:text-accent-foreground"
               title="Apply imported data only in this browser without updating Firebase cloud data"
             >
               <HardDrive size={13} />
@@ -257,7 +257,7 @@ export const ImportDiffModal: React.FC<ImportDiffModalProps> = ({
               size="sm"
               onClick={onConfirmOverrideCloud}
               disabled={isProcessing}
-              className="text-xs gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-semibold"
+              className="text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm"
               title="Apply imported data and immediately overwrite Firebase cloud save"
             >
               <Cloud size={13} />

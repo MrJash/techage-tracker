@@ -86,16 +86,17 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   // Grouped valuation calculation for matched items across different currencies
   const matchedValuations = useMemo(() => {
+    const targetItems = query.trim() ? filteredProducts : allProducts;
     const map: Record<string, number> = {};
-    for (const item of filteredProducts) {
+    for (const item of targetItems) {
       const p = item.product;
       if (p.price && !isNaN(p.price) && p.price > 0) {
-        const c = p.currency || 'USD';
+        const c = p.currency || currency || 'USD';
         map[c] = (map[c] || 0) + p.price;
       }
     }
     return Object.entries(map).map(([code, val]) => formatPrice(val, code as CurrencyCode));
-  }, [filteredProducts]);
+  }, [filteredProducts, allProducts, query, currency]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -188,7 +189,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               <X size={16} />
             </button>
           ) : (
-            <kbd className="hidden sm:inline-flex items-center text-[10px] font-semibold text-slate-400 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+            <kbd className="hidden sm:inline-flex items-center justify-center text-[10px] font-mono leading-none font-semibold text-slate-400 dark:text-zinc-500 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
               ESC
             </kbd>
           )}

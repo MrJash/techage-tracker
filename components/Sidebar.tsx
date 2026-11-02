@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Collection } from '../types';
 import {
   Folder, Plus, LayoutGrid, Trash2, Upload, Pencil, Check, X,
@@ -25,6 +25,7 @@ import { Button } from './ui/button';
 import { GoogleIcon, getCollectionIcon, AuthUser } from './sidebar/sidebarUtils';
 import { InlineMorphingExportButton } from './sidebar/InlineMorphingExportButton';
 import { CollapsedProfileMenu } from './sidebar/CollapsedProfileMenu';
+import { ActionButton } from './arc/action-button/action-button';
 
 export { getCollectionIcon, type AuthUser };
 
@@ -37,7 +38,7 @@ interface SidebarProps {
   onRenameCollection: (id: string, newName: string) => void;
   onExportData: () => void;
   onExportCSV?: () => void;
-  onImportData: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImportData: (e: React.ChangeEvent<HTMLInputElement>) => Promise<boolean | void> | void;
   isOpenMobile: boolean;
   setIsOpenMobile: (isOpen: boolean) => void;
   user: AuthUser | null;
@@ -143,19 +144,57 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     setEditingName('');
   };
 
+  const [importStatus, setImportStatus] = useState<'idle' | 'pending' | 'success'>('idle');
+  const importResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (importResetTimer.current) clearTimeout(importResetTimer.current);
+    };
+  }, []);
+
   const handleImportClick = () => {
+    if (importStatus === 'pending') return;
     if (fileInputRef.current) {
-        fileInputRef.current.click();
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (importResetTimer.current) clearTimeout(importResetTimer.current);
+    setImportStatus('pending');
+
+    try {
+      const [success] = await Promise.all([
+        Promise.resolve(onImportData(e)),
+        new Promise((resolve) => setTimeout(resolve, 600)),
+      ]);
+
+      if (success !== false) {
+        setImportStatus('success');
+        importResetTimer.current = setTimeout(() => {
+          setImportStatus('idle');
+        }, 2200);
+      } else {
+        setImportStatus('idle');
+      }
+    } catch (err) {
+      console.error('Import failed:', err);
+      setImportStatus('idle');
     }
   };
 
   return (
-    <div className={`flex flex-col h-full bg-white dark:bg-black border-r border-slate-200 dark:border-zinc-800 transition-[width] overflow-hidden duration-300 relative ${isCollapsed ? 'w-[72px]' : 'w-64'}`}>
-      <div className={`h-20 flex items-center border-b border-slate-200 dark:border-zinc-800 shrink-0 transition-all duration-300 ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
+    <div className={`flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] overflow-hidden duration-300 relative ${isCollapsed ? 'w-[72px]' : 'w-64'}`}>
+      <div className={`h-20 flex items-center border-b border-sidebar-border shrink-0 transition-all duration-300 ${isCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
         
         {/* App Logo & Title */}
         <div className={`flex items-center text-slate-900 dark:text-white font-bold text-xl select-none transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'}`}>
-          <div className="bg-slate-900 dark:bg-white text-white dark:text-black p-1.5 rounded-lg shrink-0">
+          <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shrink-0">
             <LayoutGrid size={20} />
           </div>
           <span className="whitespace-nowrap ml-2">TechTracker</span>
@@ -173,8 +212,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-x-0 space-y-1">
-        <div className={`text-xs font-semibold text-slate-400 dark:text-zinc-600 uppercase tracking-wider transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100 mb-2 px-3'}`}>
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-x-0 space-y-1" data-tour="collections-nav">
+        <div className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-h-0 opacity-0 mb-0' : 'max-h-6 opacity-100 mb-2 px-3'}`}>
           Collections
         </div>
         
@@ -183,8 +222,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             key={collection.id}
             className={`group flex items-center w-full rounded-lg transition-colors ${
               activeCollectionId === collection.id 
-                ? 'bg-slate-100 dark:bg-zinc-900' 
-                : 'hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
             }`}
           >
             {editingId === collection.id ? (
@@ -228,17 +267,20 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                 {/* Main selection area — name + click zone */}
                 <button
                     type="button"
-                    title={isCollapsed ? collection.name : undefined}
+                    title={collection.name}
                     className={`flex-1 flex items-center py-2.5 text-left min-w-0 border-none bg-transparent focus:outline-none cursor-pointer transition-all duration-300 ${isCollapsed ? 'pl-[15px] pr-0' : 'pl-3'} ${
-                       activeCollectionId === collection.id ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                       activeCollectionId === collection.id ? 'text-sidebar-accent-foreground font-semibold' : 'text-sidebar-foreground/75 hover:text-sidebar-foreground'
                     }`}
                     onClick={() => {
                         onSelectCollection(collection.id);
                         if (closeMobile) closeMobile();
                     }}
                 >
-                  {React.createElement(getCollectionIcon(collection.name), { size: 18, className: `flex-shrink-0 transition-all duration-300 ${isCollapsed ? '' : 'mr-3'} ${activeCollectionId === collection.id ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-zinc-500'}` })}
-                  <span className={`truncate text-sm font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>
+                  {React.createElement(getCollectionIcon(collection.name), { size: 18, className: `flex-shrink-0 transition-all duration-300 ${isCollapsed ? '' : 'mr-3'} ${activeCollectionId === collection.id ? 'text-sidebar-primary' : 'text-sidebar-foreground/50'}` })}
+                  <span 
+                    title={collection.name}
+                    className={`truncate text-sm font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}
+                  >
                     {collection.name}
                   </span>
                 </button>
@@ -257,9 +299,18 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                     {/* Delete button */}
                     <button
                         type="button"
-                        onClick={(e) => handleDeleteClick(e, collection.id, collection.name)}
-                        className="p-2 mr-1 text-slate-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100"
-                        title="Delete collection"
+                        disabled={collections.length <= 1}
+                        onClick={(e) => {
+                          if (collections.length <= 1) return;
+                          handleDeleteClick(e, collection.id, collection.name);
+                        }}
+                        className={`p-2 mr-1 rounded-md transition-colors ${
+                          collections.length <= 1
+                            ? 'text-slate-300 dark:text-zinc-700 cursor-not-allowed opacity-0 group-hover:opacity-40 focus:opacity-40'
+                            : 'text-slate-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer'
+                        }`}
+                        title={collections.length <= 1 ? "You must have at least one collection" : "Delete collection"}
+                        aria-disabled={collections.length <= 1}
                     >
                         <Trash2 size={13} />
                     </button>
@@ -290,7 +341,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
               setIsAdding(true);
             }}
             title={isCollapsed ? "New Collection" : undefined}
-            className={`flex items-center overflow-hidden w-full text-sm font-medium text-slate-500 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900 rounded-lg transition-all duration-300 mt-2 ${isCollapsed ? 'pl-[15px] pr-0 py-2.5' : 'px-3 py-2'}`}
+            className={`flex items-center overflow-hidden w-full text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-lg transition-all duration-300 mt-2 ${isCollapsed ? 'pl-[15px] pr-0 py-2.5' : 'px-3 py-2'}`}
           >
             <Plus size={18} className={`shrink-0 transition-all duration-300 ${isCollapsed ? '' : 'mr-3'}`} />
             <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>
@@ -302,14 +353,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
       {/* Expanded Sections Container: Cloud Save & Local Save with synchronized smooth collapse */}
       <div 
-        className={`transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden shrink-0 border-t border-slate-100 dark:border-zinc-800 ${
+        className={`transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden shrink-0 border-t border-sidebar-border ${
           isCollapsed ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-[400px] opacity-100 pointer-events-auto'
         }`}
       >
         <div className="w-64">
           {/* Cloud Save */}
           <div className="px-4 pt-3 pb-3">
-            <div className="text-xs font-semibold text-slate-400 dark:text-zinc-600 uppercase tracking-wider mb-2.5">Cloud Save</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Cloud Save</div>
             {user ? (
               <div>
                 <div className="flex items-center gap-2.5">
@@ -323,7 +374,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-slate-800 dark:text-zinc-200 truncate">{user.displayName ?? 'Signed in'}</p>
                     {isSyncing ? (
-                      <p className="text-[10px] text-slate-400 dark:text-zinc-500 flex items-center gap-1">
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full border border-slate-300 dark:border-zinc-600 border-t-slate-600 dark:border-t-zinc-300 animate-spin inline-block" />
                         Syncing…
                       </p>
@@ -332,7 +383,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                     ) : syncError ? (
                       <p className="text-[10px] text-red-500 font-medium truncate" title={syncError}>Sync failed</p>
                     ) : (
-                      <p className="text-[10px] text-slate-400 dark:text-zinc-500">Synced to cloud</p>
+                      <p className="text-[10px] text-muted-foreground">Synced to cloud</p>
                     )}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
@@ -404,22 +455,26 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           </div>
 
           {/* Local Save */}
-          <div className="border-t border-slate-100 dark:border-zinc-800 px-4 pt-3 pb-4">
-            <div className="text-xs font-semibold text-slate-400 dark:text-zinc-600 uppercase tracking-wider mb-2.5">Local Save</div>
+          <div className="border-t border-sidebar-border px-4 pt-3 pb-4">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Local Save</div>
             <div className="grid grid-cols-2 gap-2">
-              <button 
-                type="button"
+              <ActionButton
+                label="Import"
+                pendingLabel="Importing..."
+                successLabel="Imported!"
+                icon={<Upload size={14} className="shrink-0" />}
+                iconPosition="leading"
+                state={importStatus}
                 onClick={handleImportClick}
-                className="flex w-full h-9 items-center justify-center px-3 text-xs font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-900 hover:text-white dark:hover:bg-zinc-800 dark:hover:text-white rounded-lg transition-colors"
-              >
-                <Upload size={14} className="mr-2 shrink-0" />
-                <span>Import</span>
-              </button>
+                disabled={importStatus === 'pending'}
+                className="w-full h-9 bg-sidebar-accent/50 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border hover:text-sidebar-accent-foreground rounded-lg transition-colors cursor-pointer text-xs font-medium"
+                title="Import backup JSON"
+              />
               <input 
                 ref={fileInputRef}
                 type="file" 
                 accept=".json" 
-                onChange={onImportData} 
+                onChange={handleImportFileChange} 
                 className="hidden" 
                 style={{ display: 'none' }}
               />
@@ -435,7 +490,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
       {/* Collapsed Footer: Profile Icon button with synchronized smooth transition */}
       <div 
-        className={`transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden shrink-0 border-t border-slate-100 dark:border-zinc-800 ${
+        className={`transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden shrink-0 border-t border-sidebar-border ${
           isCollapsed ? 'max-h-20 opacity-100 pointer-events-auto' : 'max-h-0 opacity-0 pointer-events-none'
         }`}
       >
@@ -518,7 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
       
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden ${isOpenMobile ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden ${isOpenMobile ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent 
             collections={collections}
             activeCollectionId={activeCollectionId}

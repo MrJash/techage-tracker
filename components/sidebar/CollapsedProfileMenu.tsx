@@ -170,7 +170,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
             bottom: `${coords.bottom}px`,
             zIndex: 9999,
           }}
-          className="w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-3.5 animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200 text-slate-900 dark:text-white"
+          className="w-64 bg-sidebar text-sidebar-foreground border border-sidebar-border rounded-2xl shadow-2xl p-3.5 animate-in fade-in zoom-in-95 slide-in-from-left-2 duration-200"
         >
           {/* Top: Account Profile Details */}
           <div className="flex items-center gap-3">
@@ -228,7 +228,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
           {/* Hint when hovered only */}
           <div 
             className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-              !isOpen ? 'grid-rows-[1fr] opacity-100 mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+              !isOpen ? 'grid-rows-[1fr] opacity-100 mt-2.5 pt-2 border-t border-sidebar-border' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
             }`}
           >
             <div className="overflow-hidden flex items-center justify-between text-[10px] text-slate-400 dark:text-zinc-500">
@@ -240,7 +240,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
           {/* Action buttons */}
           <div 
             className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-              isOpen ? 'grid-rows-[1fr] opacity-100 mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+              isOpen ? 'grid-rows-[1fr] opacity-100 mt-3 pt-2.5 border-t border-sidebar-border' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
             }`}
           >
             <div className="overflow-hidden">
@@ -258,10 +258,10 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                     onManualSync?.();
                   }}
                   disabled={isSyncing || !user}
-                  className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 active:scale-95 transition-all disabled:opacity-40"
+                  className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent active:scale-95 transition-all disabled:opacity-40"
                   title="Manual Sync to Firebase"
                 >
-                  <RefreshCw size={16} className={isSyncing ? "animate-spin text-blue-500" : ""} />
+                  <RefreshCw size={16} className={isSyncing ? "animate-spin text-primary" : ""} />
                   <span className="text-[10px] mt-1 font-medium">Sync</span>
                 </button>
 
@@ -273,7 +273,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                     setIsOpen(false);
                     setIsHovered(false);
                   }}
-                  className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
+                  className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent active:scale-95 transition-all"
                   title="Import backup JSON"
                 >
                   <Upload size={16} />
@@ -282,7 +282,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
 
                 {/* Export Button with Morphing Choice */}
                 {isExportChoosing ? (
-                  <div className="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl bg-slate-100 dark:bg-zinc-800 transition-all animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl bg-sidebar-accent transition-all animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex items-center gap-1 justify-center">
                       <button
                         type="button"
@@ -298,7 +298,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                       >
                         CSV
                       </button>
-                      <div className="w-px h-3 bg-slate-300 dark:bg-zinc-700" />
+                      <div className="w-px h-3 bg-sidebar-border" />
                       <button
                         type="button"
                         onClick={() => {

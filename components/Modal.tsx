@@ -6,9 +6,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  dataTour?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, dataTour }) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -26,17 +27,18 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
     >
 
       <div 
-        className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200 flex flex-col my-8 border border-transparent dark:border-zinc-800"
+        data-tour={dataTour}
+        className="relative bg-card text-card-foreground rounded-[var(--radius)] shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200 flex flex-col my-8 border border-border"
         onClick={(e) => e.stopPropagation()}
       >
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button 
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors"
+            className="p-1.5 rounded-[var(--radius)] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
         <div className="p-6">

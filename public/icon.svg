@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <style>
+    .badge {
+      fill: #0f172a;
+    }
+    .grid-sq {
+      fill: #0f172a;
+      stroke: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      .badge {
+        fill: #ffffff;
+      }
+      .grid-sq {
+        fill: #ffffff;
+        stroke: #000000;
+      }
+    }
+  </style>
+
+  <!-- Squircle Badge (Transparent background around it, no black box) -->
+  <rect class="badge" x="24" y="24" width="464" height="464" rx="116" ry="116" />
+
+  <!-- LayoutGrid 4-square icon (matches Lucide LayoutGrid) -->
+  <g class="grid-sq" stroke-width="24" stroke-linejoin="round">
+    <rect class="grid-sq" x="108" y="108" width="124" height="124" rx="22" />
+    <rect class="grid-sq" x="280" y="108" width="124" height="124" rx="22" />
+    <rect class="grid-sq" x="108" y="280" width="124" height="124" rx="22" />
+    <rect class="grid-sq" x="280" y="280" width="124" height="124" rx="22" />
+  </g>
+</svg>

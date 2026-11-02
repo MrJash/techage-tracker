@@ -18,14 +18,13 @@ export const Button: React.FC<ButtonProps> = ({
   ...props 
 }) => {
   const Component = asChild ? Slot : "button";
-  const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none";
+  const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none";
   
   const variants = {
-    primary: "bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-900 dark:bg-white dark:text-black dark:hover:bg-slate-200 dark:focus:ring-white",
-    secondary: "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 focus:ring-slate-200 shadow-sm dark:bg-zinc-800/50 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-800 dark:focus:ring-zinc-700",
+    primary: "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring shadow-sm",
+    secondary: "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 focus:ring-ring shadow-xs",
     danger: "bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30",
-    ghost: "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700 focus:ring-slate-200 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
-
+    ghost: "bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:ring-ring"
   };
 
   const sizes = {

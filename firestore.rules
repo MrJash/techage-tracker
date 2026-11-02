@@ -70,6 +70,7 @@ service cloud.firestore {
             'defaultWarranty',
             'defaultOpeningCollection',
             'themeMode',
+            'themePreset',
             'tagColors'
           ])
           && (!('defaultCurrency' in prefs) || (prefs.defaultCurrency is string && prefs.defaultCurrency.size() >= 1 && prefs.defaultCurrency.size() <= 10))
@@ -77,6 +78,7 @@ service cloud.firestore {
           && (!('defaultWarranty' in prefs) || (prefs.defaultWarranty is number && prefs.defaultWarranty >= 0 && prefs.defaultWarranty <= 50))
           && (!('defaultOpeningCollection' in prefs) || (prefs.defaultOpeningCollection is string && prefs.defaultOpeningCollection.size() >= 1 && prefs.defaultOpeningCollection.size() <= 128))
           && (!('themeMode' in prefs) || (prefs.themeMode is string && prefs.themeMode.size() >= 1 && prefs.themeMode.size() <= 10))
+          && (!('themePreset' in prefs) || (prefs.themePreset is string && prefs.themePreset.size() >= 1 && prefs.themePreset.size() <= 30))
           && (!('tagColors' in prefs) || (prefs.tagColors is map && prefs.tagColors.size() <= 50));
       }
 
