@@ -17,6 +17,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuLabel,
   DropdownMenuGroup,
+  DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 
 interface ProductCardProps {
@@ -181,7 +182,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </div>
             </DropdownMenuTrigger>
             
-            <DropdownMenuContent align="end" className="w-[160px] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl p-1.5 flex flex-col gap-1">
+            <DropdownMenuContent align="end" className="w-[160px] bg-popover text-popover-foreground border-border">
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger 
                   disabled={availableCollections.length === 0}
@@ -192,13 +193,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent
-                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 min-w-[180px]"
+                    className="bg-popover text-popover-foreground border-border min-w-[180px]"
                   >
-                    <DropdownMenuLabel className="font-bold text-[10px] text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-2 py-1.5">
+                    <DropdownMenuLabel className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider px-2 py-1.5">
                       Move to
                     </DropdownMenuLabel>
                     {availableCollections.length === 0 ? (
-                      <div className="px-2 py-1.5 text-sm text-slate-400 dark:text-zinc-500">No other collections</div>
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">No other collections</div>
                     ) : (
                       <DropdownMenuGroup>
                         {availableCollections.map(col => (
@@ -208,9 +209,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                               onMove(product.id, col.id);
                               setIsMenuOpen(false);
                             }}
-                            className="cursor-pointer text-sm text-slate-700 dark:text-zinc-300 flex items-center gap-2"
+                            className="cursor-pointer text-sm flex items-center gap-2"
                           >
-                            {React.createElement(getCollectionIcon(col.name), { size: 14, className: 'text-slate-400 dark:text-zinc-500 shrink-0' })}
+                            {React.createElement(getCollectionIcon(col.name), { size: 14, className: 'text-muted-foreground shrink-0' })}
                             {col.name}
                           </DropdownMenuItem>
                         ))}
@@ -222,21 +223,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               
               <DropdownMenuItem
                 onClick={() => { onEdit(product); setIsMenuOpen(false); }}
-                className="cursor-pointer text-slate-700 dark:text-zinc-300"
+                className="cursor-pointer"
               >
-                <Pencil className="text-slate-400 dark:text-zinc-500" />
-                Edit
+                <Pencil className="text-muted-foreground" />
+                <span>Edit</span>
               </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
               
               <DropdownMenuItem
+                variant="destructive"
                 onClick={(e) => {
                   onDelete(product.id, product.name, e.currentTarget.getBoundingClientRect());
                   setIsMenuOpen(false);
                 }}
-                className="cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/30 dark:focus:text-red-300"
+                className="cursor-pointer"
               >
-                <Trash2 className="text-red-500 dark:text-red-400" />
-                Delete
+                <Trash2 />
+                <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -78,7 +78,7 @@ html.dark[data-base="zinc"] {
     --muted-foreground: #a1a1aa;/* Zinc 400 */
     --accent: #27272a;          /* Zinc 800 */
     --accent-foreground: #fafafa;
-    --destructive: #7f1d1d;
+    --destructive: #ef4444;
     --destructive-foreground: #fafafa;
     --border: #27272a;          /* Zinc 800 */
     --input: #3f3f46;           /* Zinc 700 (Noticeable border) */
@@ -171,7 +171,7 @@ html.dark[data-base="neutral"] {
     --muted-foreground: #a3a3a3;/* Neutral 400 */
     --accent: #262626;          /* Neutral 800 */
     --accent-foreground: #fafafa;
-    --destructive: #7f1d1d;
+    --destructive: #ef4444;
     --destructive-foreground: #fafafa;
     --border: #262626;          /* Neutral 800 */
     --input: #404040;           /* Neutral 700 (Original #404040 Border) */

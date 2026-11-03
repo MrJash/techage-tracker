@@ -3,6 +3,7 @@ import { Menu, Search, Trash2, FolderInput, XSquare, ListChecks, Filter, Setting
 import { Button } from '../ui/button';
 import { MultiSelect, Option } from '../MultiSelect';
 import { SortDropdown, SortOption, SortDropdownOption } from '../SortDropdown';
+import { MobileFilterSort } from '../MobileFilterSort';
 import { AnimatedThemeToggler } from '../ui/animated-theme-toggler';
 import { Collection } from '../../types';
 import { ThemeMode } from '../SettingsModal';
@@ -78,16 +79,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </button>
 
           <div className="flex items-center gap-1 sm:gap-1.5" data-tour="mobile-filters-group">
-            <button
-              type="button"
-              onClick={onOpenSearch}
-              className="h-9 w-9 flex items-center justify-center rounded-[var(--radius)] border border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer"
-              title="Search all products (Ctrl+K)"
-              aria-label="Search all products"
-            >
-              <Search size={16} />
-            </button>
-
             {isSelectMode ? (
               <>
                 <Button 
@@ -144,25 +135,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
+                  className="h-9 w-9 border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground shrink-0 rounded-[var(--radius)]"
                   onClick={() => onToggleSelectMode(true)}
                   title="Select Items"
                 >
                   <ListChecks size={16} />
                 </Button>
-                <MultiSelect
-                  value={filterCategories}
-                  onChange={onFilterCategoriesChange}
-                  options={filterOptions}
-                  placeholder="Filter"
-                  icon={Filter}
-                  iconOnly={true}
-                />
-                <SortDropdown
-                  value={activeSortOrder}
-                  onChange={onSortChange}
-                  options={sortOptions}
-                  iconOnly={true}
+                <MobileFilterSort
+                  filterCategories={filterCategories}
+                  onFilterCategoriesChange={onFilterCategoriesChange}
+                  filterOptions={filterOptions}
+                  activeSortOrder={activeSortOrder}
+                  onSortChange={onSortChange}
+                  sortOptions={sortOptions}
                 />
               </>
             )}
@@ -185,30 +170,37 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         </div>
 
-        {/* Bottom row: Collection Name + Count on left, Valuation on right */}
+        {/* Bottom row: Collection Name + Count/Valuation on left, Search button on right */}
         <div className="flex items-center justify-between pt-0.5" data-tour="inventory-overview">
-          <div className="min-w-0 pr-2">
+          <div className="min-w-0 pr-3">
             <h1 className="text-xl font-bold text-foreground truncate leading-tight">
               {activeCollection.name}
             </h1>
-            <p className="text-xs text-muted-foreground font-medium">
-              {activeCollection.products.length} Items
+            <p className="text-xs text-muted-foreground font-medium truncate flex items-center gap-1.5 mt-0.5">
+              <span>{activeCollection.products.length} {activeCollection.products.length === 1 ? 'Item' : 'Items'}</span>
+              {valuationEntries.length > 0 && (
+                <>
+                  <span className="text-muted-foreground/60 font-normal">•</span>
+                  {valuationEntries.map(([currCode, sum], i) => (
+                    <React.Fragment key={currCode}>
+                      {i > 0 && <span className="text-muted-foreground/60 font-normal">•</span>}
+                      <span className="text-foreground/90 font-semibold">{formatPrice(sum as number, currCode as CurrencyCode)}</span>
+                    </React.Fragment>
+                  ))}
+                </>
+              )}
             </p>
           </div>
 
-          {valuationEntries.length > 0 && (
-            <div 
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius)] bg-muted text-xs font-semibold text-foreground border border-border"
-              title="Total Valuation of Collection"
-            >
-              {valuationEntries.map(([currCode, sum], i) => (
-                <React.Fragment key={currCode}>
-                  {i > 0 && <span className="text-muted-foreground/60 font-normal">•</span>}
-                  <span>{formatPrice(sum as number, currCode as CurrencyCode)}</span>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="h-9 w-9 flex items-center justify-center rounded-[var(--radius)] border border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer shadow-xs"
+            title="Search all products (Ctrl+K)"
+            aria-label="Search all products"
+          >
+            <Search size={16} />
+          </button>
         </div>
       </div>
 
@@ -345,7 +337,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenSearch}
-              className="h-10 w-10 flex items-center justify-center rounded-[var(--radius)] border border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer"
+              className="h-10 w-10 flex items-center justify-center rounded-[var(--radius)] border border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer"
               title="Search all products (Ctrl+K)"
               aria-label="Search all products"
             >

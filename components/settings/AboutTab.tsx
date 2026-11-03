@@ -33,7 +33,7 @@ export const AboutTab: React.FC<AboutTabProps> = ({ onStartTour }) => {
                 TechAge Tracker
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 font-mono">
-                v1.5.0
+                v1.5.3
               </span>
             </div>
             <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400 mt-0.5">
@@ -72,7 +72,7 @@ export const AboutTab: React.FC<AboutTabProps> = ({ onStartTour }) => {
       <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/30 text-xs text-slate-500 dark:text-zinc-400 space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/60">
           <span className="font-medium">Version</span>
-          <span className="font-semibold text-slate-900 dark:text-white font-mono">1.5.0</span>
+          <span className="font-semibold text-slate-900 dark:text-white font-mono">1.5.3</span>
         </div>
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/60">
           <span className="font-medium">Author & Creator</span>
@@ -116,17 +116,34 @@ export const AboutTab: React.FC<AboutTabProps> = ({ onStartTour }) => {
         </div>
 
         <div className="text-xs">
-          {/* v1.5.0 */}
+          {/* v1.5.3 */}
           <div className="pb-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.5.0</span>
+                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.5.3</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">
                   Latest
                 </span>
               </div>
             </div>
             <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-emerald-500">
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Improved</strong> Sort and Filters functionality across desktop and mobile devices.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> 2 new sort options: Price: Highest to Lowest and Price: Lowest to Highest with unassigned prices positioned at the end.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Improved</strong> Animation Engine with fluid entrance and exit transitions, concentric hover radii, and authentic shadcn theme tokens.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Improved</strong> Mobile Responsiveness with a unified Sort &amp; Filter tool, and inline header valuation metrics.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> accessible AlertDialog popup with backdrop blur for batch deletion in multi-select mode.</li>
+              <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> quick &apos;Clear all filters&apos; action to desktop filter menus and upgraded card action menus.</li>
+            </ul>
+          </div>
+
+          {/* v1.5.0 */}
+          <div className="py-4 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 dark:text-white font-mono text-sm">v1.5.0</span>
+              </div>
+            </div>
+            <ul className="space-y-1.5 text-slate-600 dark:text-zinc-300 pl-4 list-disc marker:text-slate-400">
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Added</strong> 2 new color themes: Sage Garden and Amber Minimal.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Fixed</strong> various theme-related bugs and visual contrast issues.</li>
               <li><strong className="text-slate-800 dark:text-zinc-200 font-medium">Updated</strong> Import button workflow and added animated toast notifications for exports, product additions, and saves.</li>

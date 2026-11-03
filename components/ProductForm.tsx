@@ -127,8 +127,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-[3fr_2fr] sm:grid-cols-2 gap-3 sm:gap-4">
-        <div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Category
           </label>
@@ -140,7 +140,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'category' : null)}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Price
           </label>
@@ -213,7 +213,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               placeholder="0.00"
               value={formData.price}
               onChange={e => setFormData({...formData, price: e.target.value})}
-              className="flex-1 min-h-10 px-3 py-2 text-sm leading-normal text-foreground placeholder:text-muted-foreground bg-transparent outline-none border-none focus:outline-none"
+              className="flex-1 min-w-0 min-h-10 px-3 py-2 text-sm leading-normal text-foreground placeholder:text-muted-foreground bg-transparent outline-none border-none focus:outline-none"
             />
           </div>
         </div>

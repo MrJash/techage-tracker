@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Collection } from '../types';
 import {
   Folder, Plus, LayoutGrid, Trash2, Upload, Pencil, Check, X,
-  LogOut, PanelLeft, PanelLeftClose, RefreshCw, CloudUpload
+  LogOut, PanelLeft, PanelLeftClose, RefreshCw, CloudUpload,
+  Download, FileSpreadsheet, FileCode
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -23,7 +24,6 @@ import {
 import { Button } from './ui/button';
 
 import { GoogleIcon, getCollectionIcon, AuthUser } from './sidebar/sidebarUtils';
-import { InlineMorphingExportButton } from './sidebar/InlineMorphingExportButton';
 import { CollapsedProfileMenu } from './sidebar/CollapsedProfileMenu';
 import { ActionButton } from './arc/action-button/action-button';
 
@@ -479,10 +479,39 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                 style={{ display: 'none' }}
               />
               
-              <InlineMorphingExportButton 
-                onExportCSV={onExportCSV}
-                onExportJSON={onExportData}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full h-9 bg-sidebar-accent/50 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border hover:text-sidebar-accent-foreground rounded-lg transition-colors cursor-pointer text-xs font-medium flex items-center justify-center gap-1.5 outline-none"
+                    title="Export options"
+                  >
+                    <Download size={14} className="shrink-0" />
+                    <span>Export</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  side="top" 
+                  align="end" 
+                  sideOffset={8}
+                  className="w-44 bg-popover text-popover-foreground border border-border rounded-[var(--radius)] shadow-lg p-1 z-50"
+                >
+                  <DropdownMenuItem 
+                    onClick={onExportCSV} 
+                    className="gap-2 py-2 px-2.5 cursor-pointer text-xs font-medium focus:bg-accent focus:text-accent-foreground"
+                  >
+                    <FileSpreadsheet size={15} className="text-emerald-500 shrink-0" />
+                    <span>Export as CSV</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={onExportData} 
+                    className="gap-2 py-2 px-2.5 cursor-pointer text-xs font-medium focus:bg-accent focus:text-accent-foreground"
+                  >
+                    <FileCode size={15} className="text-blue-500 shrink-0" />
+                    <span>Export as JSON</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

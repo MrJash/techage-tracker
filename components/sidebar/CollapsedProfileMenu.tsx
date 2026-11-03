@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { RefreshCw, Upload, Download, LogOut } from 'lucide-react';
+import { RefreshCw, Upload, Download, LogOut, FileSpreadsheet, FileCode } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { AuthUser, GoogleIcon } from './sidebarUtils';
 
 export interface CollapsedProfileMenuProps {
@@ -34,27 +40,6 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<any>(null);
   const [coords, setCoords] = useState<{ left: number; bottom: number } | null>(null);
-  const [isExportChoosing, setIsExportChoosing] = useState(false);
-  const exportTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const clearExportTimer = () => {
-    if (exportTimerRef.current) {
-      clearTimeout(exportTimerRef.current);
-      exportTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => clearExportTimer();
-  }, []);
-
-  const handleStartExportChoice = () => {
-    clearExportTimer();
-    setIsExportChoosing(true);
-    exportTimerRef.current = setTimeout(() => {
-      setIsExportChoosing(false);
-    }, 5000);
-  };
 
   const updateCoords = () => {
     if (triggerRef.current) {
@@ -280,53 +265,48 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                   <span className="text-[10px] mt-1 font-medium">Import</span>
                 </button>
 
-                {/* Export Button with Morphing Choice */}
-                {isExportChoosing ? (
-                  <div className="flex flex-col items-center justify-center py-1 px-0.5 rounded-xl bg-sidebar-accent transition-all animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex items-center gap-1 justify-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          clearExportTimer();
-                          setIsExportChoosing(false);
-                          setIsOpen(false);
-                          setIsHovered(false);
-                          onExportCSV?.();
-                        }}
-                        className="w-5 h-5 rounded border border-emerald-500/80 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-extrabold text-[8px] flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-colors"
-                        title="Export CSV"
-                      >
-                        CSV
-                      </button>
-                      <div className="w-px h-3 bg-sidebar-border" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          clearExportTimer();
-                          setIsExportChoosing(false);
-                          setIsOpen(false);
-                          setIsHovered(false);
-                          onExportData();
-                        }}
-                        className="w-5 h-5 rounded border border-blue-500/80 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-[7.5px] flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
-                        title="Export JSON"
-                      >
-                        JSON
-                      </button>
-                    </div>
-                    <span className="text-[9px] text-slate-500 dark:text-zinc-400 font-semibold mt-0.5">Format</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleStartExportChoice}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 active:scale-95 transition-all outline-none"
-                    title="Export options"
+                {/* Export Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent active:scale-95 transition-all outline-none cursor-pointer"
+                      title="Export options"
+                    >
+                      <Download size={16} />
+                      <span className="text-[10px] mt-1 font-medium">Export</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    side="top" 
+                    align="center" 
+                    sideOffset={8}
+                    className="w-44 bg-popover text-popover-foreground border border-border rounded-[var(--radius)] shadow-xl p-1 z-[10001]"
                   >
-                    <Download size={16} />
-                    <span className="text-[10px] mt-1 font-medium">Export</span>
-                  </button>
-                )}
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsHovered(false);
+                        onExportCSV?.();
+                      }} 
+                      className="gap-2 py-2 px-2.5 cursor-pointer text-xs font-medium focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <FileSpreadsheet size={15} className="text-emerald-500 shrink-0" />
+                      <span>Export as CSV</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsHovered(false);
+                        onExportData();
+                      }} 
+                      className="gap-2 py-2 px-2.5 cursor-pointer text-xs font-medium focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <FileCode size={15} className="text-blue-500 shrink-0" />
+                      <span>Export as JSON</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Sign Out or Sign In */}
                 {user ? (
@@ -337,7 +317,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                       setIsOpen(false);
                       setIsHovered(false);
                     }}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition-all"
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 active:scale-95 transition-all cursor-pointer"
                     title="Sign Out"
                   >
                     <LogOut size={16} />
@@ -351,7 +331,7 @@ export const CollapsedProfileMenu: React.FC<CollapsedProfileMenuProps> = ({
                       setIsOpen(false);
                       setIsHovered(false);
                     }}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-95 transition-all"
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-xl text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent active:scale-95 transition-all cursor-pointer"
                     title="Sign in with Google"
                   >
                     <GoogleIcon />

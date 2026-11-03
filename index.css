@@ -15,9 +15,6 @@
 
 @theme {
     --font-sans: "Inter", sans-serif;
-    --color-primary: #0f172a;
-    --color-secondary: #64748b;
-    --color-accent: #3b82f6;
     --color-zinc-900: #171717;
     --color-zinc-800: #262626;
     --color-zinc-700: #404040;
@@ -135,13 +132,81 @@ body {
     --shadow-2xl: var(--shadow-2xl);
 }
 
-/* Fix Tailwind CSS v4 animation collisions with tailwindcss-animate */
+/* ========================================================================== */
+/* shadcn / Radix Enter & Exit Animation Engine for Tailwind CSS v4           */
+/* ========================================================================== */
+@keyframes enter {
+    from {
+        opacity: var(--tw-enter-opacity, 0);
+        transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 0.95), var(--tw-enter-scale, 0.95), 1);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+}
+
+@keyframes exit {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+    to {
+        opacity: var(--tw-exit-opacity, 0);
+        transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 0.95), var(--tw-exit-scale, 0.95), 1);
+    }
+}
+
 @utility animate-in {
     animation-name: enter !important;
+    animation-duration: 150ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    --tw-enter-opacity: 0;
+    --tw-enter-scale: 0.95;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
 }
 
 @utility animate-out {
     animation-name: exit !important;
+    animation-duration: 150ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    --tw-exit-opacity: 0;
+    --tw-exit-scale: 0.95;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
+}
+
+@utility fade-in-0 {
+    --tw-enter-opacity: 0;
+}
+
+@utility fade-out-0 {
+    --tw-exit-opacity: 0;
+}
+
+@utility zoom-in-95 {
+    --tw-enter-scale: 0.95;
+}
+
+@utility zoom-out-95 {
+    --tw-exit-scale: 0.95;
+}
+
+@utility slide-in-from-top-2 {
+    --tw-enter-translate-y: -0.5rem;
+}
+
+@utility slide-in-from-bottom-2 {
+    --tw-enter-translate-y: 0.5rem;
+}
+
+@utility slide-in-from-left-2 {
+    --tw-enter-translate-x: -0.5rem;
+}
+
+@utility slide-in-from-right-2 {
+    --tw-enter-translate-x: 0.5rem;
 }
 
 ::view-transition-old(root) {

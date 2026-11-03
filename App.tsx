@@ -2,6 +2,16 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProductGrid } from './components/ProductGrid';
 import { Button } from './components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './components/AlertDialog';
 import { Collection, Product, MONTHS, CATEGORIES, CONDITIONS } from './types';
 import { generateId, calculateWarrantyStatus } from './utils/dateHelpers';
 import { Toast } from './components/Toast';
@@ -420,6 +430,9 @@ export default function App() {
     setIsSelectMode,
     selectedProductIds,
     setSelectedProductIds,
+    isBatchDeleteAlertOpen,
+    setIsBatchDeleteAlertOpen,
+    confirmBatchDelete,
     toggleSelectProduct,
     handleLongPress,
     handleBatchDelete,
@@ -793,6 +806,22 @@ export default function App() {
     }
 
     result.sort((a, b) => {
+      if (activeSortOrder === 'price-high' || activeSortOrder === 'price-low') {
+        const hasPriceA = a.price !== undefined && a.price !== null && !isNaN(a.price) && typeof a.price === 'number';
+        const hasPriceB = b.price !== undefined && b.price !== null && !isNaN(b.price) && typeof b.price === 'number';
+
+        if (!hasPriceA && !hasPriceB) {
+          return (b.purchaseYear * 12 + b.purchaseMonth) - (a.purchaseYear * 12 + a.purchaseMonth);
+        }
+        if (!hasPriceA) return 1; // Unassigned price goes to the end
+        if (!hasPriceB) return -1; // Unassigned price goes to the end
+
+        if (a.price !== b.price) {
+          return activeSortOrder === 'price-high' ? b.price! - a.price! : a.price! - b.price!;
+        }
+        return (b.purchaseYear * 12 + b.purchaseMonth) - (a.purchaseYear * 12 + a.purchaseMonth);
+      }
+
       const dateA = a.purchaseYear * 12 + a.purchaseMonth;
       const dateB = b.purchaseYear * 12 + b.purchaseMonth;
       if (activeSortOrder === 'oldest') {
@@ -849,6 +878,8 @@ export default function App() {
     { label: 'Custom Order', value: 'custom', disabled: !activeCollection?.hasCustomOrder },
     { label: 'Newest First', value: 'newest' },
     { label: 'Oldest First', value: 'oldest' },
+    { label: 'Price: Highest to Lowest', value: 'price-high' },
+    { label: 'Price: Lowest to Highest', value: 'price-low' },
   ];
 
   const handleSortChange = (newOrder: string) => {
@@ -1323,6 +1354,30 @@ export default function App() {
           onClose={() => setGeneralToastMessage(null)}
         />
       )}
+
+      {/* Batch Delete Confirmation Alert Dialog */}
+      <AlertDialog open={isBatchDeleteAlertOpen} onOpenChange={setIsBatchDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Selected Items</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedProductIds.length} {selectedProductIds.length === 1 ? 'item' : 'items'}? This will permanently remove {selectedProductIds.length === 1 ? 'it' : 'them'} from your collections and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel asChild>
+              <Button variant="secondary" onClick={() => setIsBatchDeleteAlertOpen(false)}>
+                Cancel
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={confirmBatchDelete}>
+                Delete
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Guided Tutorial / Onboarding Tour */}
       <WelcomeTour

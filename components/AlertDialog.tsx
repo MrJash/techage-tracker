@@ -4,7 +4,7 @@ import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "../lib/utils"
-import { Button } from "./Button"
+import { buttonVariants } from "./ui/button"
 
 function AlertDialog({
   ...props
@@ -34,8 +34,6 @@ interface AlertDialogOverlayProps extends React.ComponentPropsWithoutRef<typeof 
   anchorRect?: DOMRect | null;
 }
 
-
-
 function AlertDialogOverlay({
   className,
   noBlur,
@@ -50,27 +48,22 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       style={spotlightStyle}
       className={cn(
-        "fixed inset-0 z-50 transition-all duration-500 ease-in-out",
+        "fixed inset-0 z-50 transition-all duration-300 ease-in-out",
         anchorRect 
           ? "bg-black/0 backdrop-blur-[5px] animate-in fade-in" 
-          : "bg-black/90 backdrop-blur-md animate-in fade-in duration-300",
+          : "bg-black/60 backdrop-blur-md animate-in fade-in duration-300",
         className
       )}
       {...props}
     />
-
   )
 }
-
-
-
 
 interface AlertDialogContentProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content> {
   anchorRect?: DOMRect | null;
   className?: string;
   children?: React.ReactNode;
 }
-
 
 function AlertDialogContent({
   className,
@@ -84,8 +77,6 @@ function AlertDialogContent({
       <AlertDialogOverlay anchorRect={anchorRect} />
       <div 
         className={cn(
-
-
           "fixed inset-0 z-50 flex p-4",
           isAnchored ? "items-start justify-start" : "items-center justify-center pointer-events-none"
         )}
@@ -101,7 +92,7 @@ function AlertDialogContent({
             pointerEvents: 'auto'
           }}
           className={cn(
-            "relative z-50 grid w-full gap-6 border border-slate-200 bg-white p-6 shadow-2xl animate-in duration-200 dark:border-zinc-800 dark:bg-zinc-950 sm:rounded-2xl",
+            "relative z-50 grid w-full gap-6 border border-border bg-card text-card-foreground p-6 shadow-2xl animate-in duration-200 rounded-[var(--radius)]",
             isAnchored ? "fade-in slide-in-from-top-2 zoom-in-95" : "max-w-lg zoom-in-95 text-center",
             className
           )}
@@ -109,7 +100,7 @@ function AlertDialogContent({
         >
           {isAnchored && (
             <div 
-              className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-zinc-950 border-l border-t border-slate-200 dark:border-zinc-800 rotate-45" 
+              className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-l border-t border-border rotate-45" 
             />
           )}
 
@@ -119,9 +110,6 @@ function AlertDialogContent({
     </AlertDialogPortal>
   )
 }
-
-
-
 
 function AlertDialogHeader({
   className,
@@ -159,7 +147,7 @@ function AlertDialogTitle({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
   return (
     <AlertDialogPrimitive.Title
-      className={cn("text-lg font-semibold text-slate-900 dark:text-white", className)}
+      className={cn("text-lg font-semibold text-foreground", className)}
       {...props}
     />
   )
@@ -171,37 +159,49 @@ function AlertDialogDescription({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
   return (
     <AlertDialogPrimitive.Description
-      className={cn("text-sm text-slate-500 dark:text-zinc-400", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   )
 }
 
-function AlertDialogAction({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
-  return (
-    <AlertDialogPrimitive.Action
-      asChild
-      className={cn(className)}
-      {...props}
-    />
-  )
+interface AlertDialogActionProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> {
+  asChild?: boolean;
 }
 
-function AlertDialogCancel({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
-  return (
-    <AlertDialogPrimitive.Cancel
-      asChild
-      className={cn(className)}
-      {...props}
-    />
-  )
+const AlertDialogAction = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Action>,
+  AlertDialogActionProps
+>(({ className, asChild = false, ...props }, ref) => (
+  <AlertDialogPrimitive.Action
+    ref={ref}
+    asChild={asChild}
+    className={cn(!asChild && buttonVariants(), className)}
+    {...props}
+  />
+))
+AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
+
+interface AlertDialogCancelProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel> {
+  asChild?: boolean;
 }
+
+const AlertDialogCancel = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
+  AlertDialogCancelProps
+>(({ className, asChild = false, ...props }, ref) => (
+  <AlertDialogPrimitive.Cancel
+    ref={ref}
+    asChild={asChild}
+    className={cn(
+      !asChild && buttonVariants({ variant: "outline" }),
+      "mt-2 sm:mt-0",
+      className
+    )}
+    {...props}
+  />
+))
+AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName
 
 export {
   AlertDialog,

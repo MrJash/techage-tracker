@@ -9,6 +9,7 @@ export function useProductSelection(
 ) {
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [isBatchDeleteAlertOpen, setIsBatchDeleteAlertOpen] = useState(false);
 
   // Cancel selection on Escape key
   useEffect(() => {
@@ -37,7 +38,11 @@ export function useProductSelection(
   };
 
   const handleBatchDelete = () => {
-    if (!window.confirm(`Delete ${selectedProductIds.length} items?`)) return;
+    if (selectedProductIds.length === 0) return;
+    setIsBatchDeleteAlertOpen(true);
+  };
+
+  const confirmBatchDelete = () => {
     if (userId) {
       selectedProductIds.forEach(id => {
         deleteReceiptFromFirestore(userId, id).catch(() => {});
@@ -49,6 +54,7 @@ export function useProductSelection(
     })));
     setIsSelectMode(false);
     setSelectedProductIds([]);
+    setIsBatchDeleteAlertOpen(false);
   };
 
   const handleBatchMove = (targetCollectionId: string) => {
@@ -85,6 +91,9 @@ export function useProductSelection(
     setIsSelectMode,
     selectedProductIds,
     setSelectedProductIds,
+    isBatchDeleteAlertOpen,
+    setIsBatchDeleteAlertOpen,
+    confirmBatchDelete,
     toggleSelectProduct,
     handleLongPress,
     handleBatchDelete,

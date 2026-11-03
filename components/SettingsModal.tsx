@@ -333,7 +333,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               ) : (
                 <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">
-                  TechAge Tracker v1.5.0
+                  TechAge Tracker v1.5.3
                 </span>
               )}
             </div>
